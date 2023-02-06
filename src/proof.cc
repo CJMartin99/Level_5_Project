@@ -11,10 +11,12 @@
 #include <tuple>
 #include <utility>
 
-#include <boost/iostreams/device/file.hpp>
+/* #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/stream.hpp> */
+
+#include <fmt/core.h>
 
 using std::copy;
 using std::endl;
@@ -39,12 +41,13 @@ using std::tuple;
 using std::unique_ptr;
 using std::vector;
 
-using boost::iostreams::bzip2_compressor;
+/* using boost::iostreams::bzip2_compressor;
 using boost::iostreams::file_sink;
-using boost::iostreams::filtering_ostream;
+using boost::iostreams::filtering_ostream; */
 
 namespace
 {
+    /*
     auto make_compressed_ostream(const string & fn) -> unique_ptr<ostream>
     {
         auto out = make_unique<filtering_ostream>();
@@ -52,6 +55,7 @@ namespace
         out->push(file_sink(fn));
         return out;
     }
+    */
 }
 
 ProofError::ProofError(const string & m) noexcept :
