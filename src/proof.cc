@@ -43,6 +43,10 @@ using boost::iostreams::bzip2_compressor;
 using boost::iostreams::file_sink;
 using boost::iostreams::filtering_ostream;
 
+/* There will be 3/4 versions of this code to reflect the different test version that will be run */
+/* Preproccessing code will be used to seperate them - comments will give the name of the flag required at compilation */
+
+#ifdef NEWLINE
 namespace
 {
     auto make_compressed_ostream(const string & fn) -> unique_ptr<ostream>
@@ -1153,4 +1157,13 @@ auto Proof::propagated(const NamedVertex & p, const NamedVertex & t, int g, int 
 {
     *_imp->proof_stream << "* adjacency propagation from " << p.second << " -> " << t.second << " in graph pairs " << g << " deleted " << n_values << " values from " << q.second << "\n";
 }
+#endif
 
+#ifdef FMT
+#endif
+
+#ifdef FMTNEWLINE
+#endif
+
+#ifdef FMTCOMPRESS
+#endif
