@@ -41,8 +41,8 @@ class Proof
         ~Proof();
         auto operator= (Proof &&) -> Proof &;
 
-        Proof(const Proof &) = delete;
-        auto operator= (const Proof &) -> Proof & = delete;
+        /* Proof(const Proof &) = delete; */
+        /* auto operator= (const Proof &) -> Proof & = delete; */
 
         auto super_extra_verbose() const -> bool;
 

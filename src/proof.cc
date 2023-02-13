@@ -11,12 +11,13 @@
 #include <tuple>
 #include <utility>
 
-/* #include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/stream.hpp> */
+#include <boost/iostreams/stream.hpp>
 
 #include <fmt/core.h>
+#include <fmt/os.h>
 
 using std::copy;
 using std::endl;
@@ -41,13 +42,13 @@ using std::tuple;
 using std::unique_ptr;
 using std::vector;
 
-/* using boost::iostreams::bzip2_compressor;
+using boost::iostreams::bzip2_compressor;
 using boost::iostreams::file_sink;
-using boost::iostreams::filtering_ostream; */
+using boost::iostreams::filtering_ostream;
 
 namespace
 {
-    /*
+    
     auto make_compressed_ostream(const string & fn) -> unique_ptr<ostream>
     {
         auto out = make_unique<filtering_ostream>();
@@ -55,8 +56,8 @@ namespace
         out->push(file_sink(fn));
         return out;
     }
-    */
-}
+    
+} 
 
 ProofError::ProofError(const string & m) noexcept :
     _message("Proof error: " + m)
@@ -72,7 +73,7 @@ struct Proof::Imp
 {
     string opb_filename, log_filename;
     stringstream model_stream, model_prelude_stream;
-    unique_ptr<ostream> proof_stream;
+    /* fmt::ostream proof_stream; */
     bool friendly_names;
     bool bz2 = false;
     bool super_extra_verbose = false;
@@ -110,6 +111,8 @@ Proof::Proof(const string & opb_file, const string & log_file, bool f, bool b, b
     _imp->friendly_names = f;
     _imp->bz2 = b;
     _imp->super_extra_verbose = s;
+    /* auto stream = fmt::output_file(log_file); */
+    /* _imp->proof_stream = fmt::output_file(log_file); */
 }
 
 Proof::Proof(Proof &&) = default;
@@ -179,7 +182,7 @@ auto Proof::create_adjacency_constraint(int p, int q, int t, const vector<int> &
 
 auto Proof::finalise_model() -> void
 {
-    unique_ptr<ostream> f = (_imp->bz2 ? make_compressed_ostream(_imp->opb_filename + ".bz2") : make_unique<ofstream>(_imp->opb_filename));
+    unique_ptr<ostream> f = /* fmt::output_file(_imp->log_filename) */ (_imp->bz2 ? make_compressed_ostream(_imp->opb_filename + ".bz2") : make_unique<ofstream>(_imp->opb_filename));
 
     *f << "* #variable= " << (_imp->variable_mappings.size() + _imp->binary_variable_mappings.size()
             + _imp->connected_variable_mappings.size() + _imp->connected_variable_mappings_aux.size())
@@ -192,45 +195,45 @@ auto Proof::finalise_model() -> void
     if (! *f)
         throw ProofError{ "Error writing opb file to '" + _imp->opb_filename + "'" };
 
-    _imp->proof_stream = (_imp->bz2 ? make_compressed_ostream(_imp->log_filename + ".bz2") : make_unique<ofstream>(_imp->log_filename));
+    /* _imp->proof_stream = fmt::output_file(_imp->log_filename); /* (_imp->bz2 ? make_compressed_ostream(_imp->log_filename + ".bz2") : make_unique<ofstream>(_imp->log_filename)); */
 
-    *_imp->proof_stream << "pseudo-Boolean proof version 1.0" << endl;
+    fmt::println(_imp->log_filename, "pseudo-Boolean proof version 1.0");
 
-    *_imp->proof_stream << "f " << _imp->nb_constraints << " 0" << endl;
+    fmt::println(_imp->log_filename, "f {} 0",_imp->nb_constraints);
     _imp->proof_line += _imp->nb_constraints;
 
-    if (! *_imp->proof_stream)
-        throw ProofError{ "Error writing proof file to '" + _imp->log_filename + "'" };
+    /* if (! *_imp->proof_stream)
+        throw ProofError{ "Error writing proof file to '" + _imp->log_filename + "'" }; */
 }
 
 auto Proof::finish_unsat_proof() -> void
 {
-    *_imp->proof_stream << "* asserting that we've proved unsat" << endl;
-    *_imp->proof_stream << "u >= 1 ;" << endl;
+    fmt::println(_imp->log_filename, "* asserting that we've proved unsat");
+    fmt::println(_imp->log_filename, "u >= 1 ;");
     ++_imp->proof_line;
-    *_imp->proof_stream << "c " << _imp->proof_line << " 0" << endl;
+    fmt::println(_imp->log_filename, "c {} 0", _imp->proof_line);
 }
 
 auto Proof::failure_due_to_pattern_bigger_than_target() -> void
 {
-    *_imp->proof_stream << "* failure due to the pattern being bigger than the target" << endl;
+    fmt::println(_imp->log_filename, "* failure due to the pattern being bigger than the target");
 
     // we get a hall violator by adding up all of the things
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
     bool first = true;
 
     for (auto & [ _, line ] : _imp->at_least_one_value_constraints) {
         if (first) {
-            *_imp->proof_stream << " " << line;
+            fmt::print(_imp->log_filename, " {}", line);
             first = false;
         }
         else
-            *_imp->proof_stream << " " << line << " +";
+            fmt::print(_imp->log_filename, " {} +", line);
     }
 
     for (auto & [ _, line ] : _imp->injectivity_constraints)
-        *_imp->proof_stream << " " << line << " +";
-    *_imp->proof_stream << " 0" << endl;
+        fmt::print(_imp->log_filename, " {} +", line);
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 }
 
@@ -241,34 +244,34 @@ auto Proof::incompatible_by_degrees(
         const NamedVertex & t,
         const vector<int> & n_t) -> void
 {
-    *_imp->proof_stream << "* cannot map " << p.second << " to " << t.second << " due to degrees in graph pairs " << g << endl;
+    fmt::println(_imp->log_filename, "* cannot map {} to {} due to degrees in graph pairs {}", p.second, t.second, g);
 
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
     bool first = true;
     for (auto & n : n_p) {
         // due to loops or labels, it might not be possible to map n to t.first
         if (_imp->adjacency_lines.count(tuple{ g, p.first, n, t.first })) {
             if (first) {
                 first = false;
-                *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ g, p.first, n, t.first }];
+                fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ g, p.first, n, t.first }]);
             }
             else
-                *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ g, p.first, n, t.first }] << " +";
+                fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ g, p.first, n, t.first }]);
         }
     }
 
     // if I map p to t, I have to map the neighbours of p to neighbours of t
     for (auto & n : n_t)
-        *_imp->proof_stream << " " << _imp->injectivity_constraints[n] << " +";
+        fmt::print(_imp->log_filename, " {} +", _imp->injectivity_constraints[n]);
 
-    *_imp->proof_stream << " 0" << endl;
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }] << " >= 1 ;" << endl;
+    fmt::println(_imp->log_filename, "j {} 1 ~x{} >=1 ;", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     ++_imp->proof_line;
     _imp->eliminations.emplace(pair{ p.first, t.first }, _imp->proof_line);
 
-    *_imp->proof_stream << "d " << _imp->proof_line - 1 << " 0" << endl;
+    fmt::println(_imp->log_filename, "d {} 0", _imp->proof_line - 1);
 }
 
 auto Proof::incompatible_by_nds(
@@ -279,113 +282,113 @@ auto Proof::incompatible_by_nds(
         const vector<int> & t_subsequence,
         const vector<int> & t_remaining) -> void
 {
-    *_imp->proof_stream << "* cannot map " << p.second << " to " << t.second << " due to nds in graph pairs " << g << endl;
+    fmt::println(_imp->log_filename, "* cannot map {} to {} due to nds in graph pairs {}", p.second, t.second, g);
 
     // summing up horizontally
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
     bool first = true;
     for (auto & n : p_subsequence) {
         // due to loops or labels, it might not be possible to map n to t.first
         if (_imp->adjacency_lines.count(tuple{ g, p.first, n, t.first })) {
             if (first) {
                 first = false;
-                *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ g, p.first, n, t.first }];
+                fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ g, p.first, n, t.first }]);
             }
             else
-                *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ g, p.first, n, t.first }] << " +";
+                fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ g, p.first, n, t.first }]);
         }
     }
 
     // injectivity in the square
     for (auto & t : t_subsequence) {
         if (t != t_subsequence.back())
-            *_imp->proof_stream << " " << _imp->injectivity_constraints.find(t)->second << " +";
+            fmt::println(_imp->log_filename, " {} +", _imp->injectivity_constraints.find(t)->second);
     }
 
     // block to the right of the failing square
     for (auto & n : p_subsequence) {
         for (auto & u : t_remaining) {
             /* n -> t is already eliminated by degree or loop */
-            *_imp->proof_stream << " " << _imp->eliminations[pair{ n, u }] << " +";
+            fmt::println(_imp->log_filename, " {} +", _imp->eliminations[pair{ n, u }]);
         }
     }
 
     // final column
     for (auto & n : p_subsequence) {
         /* n -> t is already eliminated by degree or loop */
-        *_imp->proof_stream << " " << _imp->eliminations[pair{ n, t_subsequence.back() }] << " +";
+        fmt::print(_imp->log_filename, " {} +", _imp->eliminations[pair{ n, t_subsequence.back() }]);
     }
 
-    *_imp->proof_stream << " 0" << endl;
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }] << " >= 1 ;" << endl;
+    fmt::println(_imp->log_filename, "j {} 1 ~x{} >= 1 ;", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "d " << _imp->proof_line - 1 << " 0" << endl;
+    fmt::println(_imp->log_filename, "d {} 0", _imp->proof_line - 1);
 }
 
 auto Proof::initial_domain_is_empty(int p) -> void
 {
-    *_imp->proof_stream << "* failure due to domain " << p << " being empty" << endl;
+    fmt::println(_imp->log_filename, "* failure due to domain {} being empty", p);
 }
 
 auto Proof::emit_hall_set_or_violator(const vector<NamedVertex> & lhs, const vector<NamedVertex> & rhs) -> void
 {
-    *_imp->proof_stream << "* hall set or violator {";
+    fmt::print(_imp->log_filename, "* hall set or violator {");
     for (auto & l : lhs)
-        *_imp->proof_stream << " " << l.second;
-    *_imp->proof_stream << " } / {";
+        fmt::print(_imp->log_filename, " {}", l.second);
+    fmt::print(_imp->log_filename, " } / {");
     for (auto & r : rhs)
-        *_imp->proof_stream << " " << r.second;
-    *_imp->proof_stream << " }" << endl;
-    *_imp->proof_stream << "p";
+        fmt::print(_imp->log_filename, " {}", r.second);
+    fmt::println(_imp->log_filename, " }");
+    fmt::print(_imp->log_filename, "p");
     bool first = true;
     for (auto & l : lhs) {
         if (first) {
             first = false;
-            *_imp->proof_stream << " " << _imp->at_least_one_value_constraints[l.first];
+            fmt::println(_imp->log_filename, " {}", _imp->at_least_one_value_constraints[l.first]);
         }
         else
-            *_imp->proof_stream << " " << _imp->at_least_one_value_constraints[l.first] << " +";
+            fmt::println(_imp->log_filename, " {} +", _imp->at_least_one_value_constraints[l.first]);
     }
     for (auto & r : rhs)
-        *_imp->proof_stream << " " << _imp->injectivity_constraints[r.first] << " +";
-    *_imp->proof_stream << " 0" << endl;
+        fmt::print(_imp->log_filename, " {} +", _imp->injectivity_constraints[r.first]);
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 }
 
 auto Proof::root_propagation_failed() -> void
 {
-    *_imp->proof_stream << "* root node propagation failed" << endl;
+    fmt::println(_imp->log_filename, "* root node propagation failed");
 }
 
 auto Proof::guessing(int depth, const NamedVertex & branch_v, const NamedVertex & val) -> void
 {
-    *_imp->proof_stream << "* [" << depth << "] guessing " << branch_v.second << "=" << val.second << endl;
+    fmt::println(_imp->log_filename, "* [{}] guessing {}={}", depth, branch_v.second, val.second);
 }
 
 auto Proof::propagation_failure(const vector<pair<int, int> > & decisions, const NamedVertex & branch_v, const NamedVertex & val) -> void
 {
-    *_imp->proof_stream << "* [" << decisions.size() << "] propagation failure on " << branch_v.second << "=" << val.second << endl;
-    *_imp->proof_stream << "u ";
+    fmt::println(_imp->log_filename, "* [{}] propagation failure on {}={}", decisions.size(), branch_v.second, val.second);
+    fmt::print(_imp->log_filename, "u ");
     for (auto & [ var, val ] : decisions)
-        *_imp->proof_stream << " 1 ~x" << _imp->variable_mappings[pair{ var, val }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 ~x{}", _imp->variable_mappings[pair{ var, val }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 }
 
 auto Proof::incorrect_guess(const vector<pair<int, int> > & decisions, bool failure) -> void
 {
     if (failure)
-        *_imp->proof_stream << "* [" << decisions.size() << "] incorrect guess" << endl;
+        fmt::println(_imp->log_filename, "* [{}] incorrect guess", decisions.size());
     else
-        *_imp->proof_stream << "* [" << decisions.size() << "] backtracking" << endl;
+        fmt::println(_imp->log_filename, "* [{}] backtracking", decisions.size());
 
-    *_imp->proof_stream << "u";
+    fmt::print(_imp->log_filename, "u");
     for (auto & [ var, val ] : decisions)
-        *_imp->proof_stream << " 1 ~x" << _imp->variable_mappings[pair{ var, val }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 ~x{}", _imp->variable_mappings[pair{ var, val }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 }
 
@@ -395,82 +398,82 @@ auto Proof::out_of_guesses(const vector<pair<int, int> > &) -> void
 
 auto Proof::unit_propagating(const NamedVertex & var, const NamedVertex & val) -> void
 {
-    *_imp->proof_stream << "* unit propagating " << var.second << "=" << val.second << endl;
+    fmt::println(_imp->log_filename, "* unit propagating {}={}", var.second, val.second);
 }
 
 auto Proof::start_level(int l) -> void
 {
-    *_imp->proof_stream << "# " << l << endl;
+    fmt::println(_imp->log_filename, "# {}", l);
     _imp->largest_level_set = max(_imp->largest_level_set, l);
 }
 
 auto Proof::back_up_to_level(int l) -> void
 {
-    *_imp->proof_stream << "# " << l << endl;
+    fmt::println(_imp->log_filename, "# {}", l);
     _imp->largest_level_set = max(_imp->largest_level_set, l);
 }
 
 auto Proof::forget_level(int l) -> void
 {
     if (_imp->largest_level_set >= l)
-        *_imp->proof_stream << "w " << l << endl;
+        fmt::println(_imp->log_filename, "w {}", l);
 }
 
 auto Proof::back_up_to_top() -> void
 {
-    *_imp->proof_stream << "# " << 0 << endl;
+    fmt::println(_imp->log_filename, "# {}", 0);
 }
 
 auto Proof::post_restart_nogood(const vector<pair<int, int> > & decisions) -> void
 {
-    *_imp->proof_stream << "* [" << decisions.size() << "] restart nogood" << endl;
-    *_imp->proof_stream << "u";
+    fmt::println(_imp->log_filename, "* [{}] restart nogood", decisions.size());
+    fmt::print(_imp->log_filename, "u");
     for (auto & [ var, val ] : decisions)
-        *_imp->proof_stream << " 1 ~x" << _imp->variable_mappings[pair{ var, val }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 ~x{}", _imp->variable_mappings[pair{ var, val }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 }
 
 auto Proof::post_solution(const vector<pair<NamedVertex, NamedVertex> > & decisions) -> void
 {
-    *_imp->proof_stream << "* found solution";
+    fmt::print(_imp->log_filename, "* found solution");
     for (auto & [ var, val ] : decisions)
-        *_imp->proof_stream << " " << var.second << "=" << val.second;
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " {}={}", var.second, val.second);
+    fmt::println(_imp->log_filename, "");
 
-    *_imp->proof_stream << "v";
+    fmt::print(_imp->log_filename, "v");
     for (auto & [ var, val ] : decisions)
-        *_imp->proof_stream << " x" << _imp->variable_mappings[pair{ var.first, val.first }];
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " x{}", _imp->variable_mappings[pair{ var.first, val.first }]);
+    fmt::println(_imp->log_filename, "");
     ++_imp->proof_line;
 }
 
 auto Proof::post_solution(const vector<int> & solution) -> void
 {
-    *_imp->proof_stream << "v";
+    fmt::print(_imp->log_filename, "v");
     for (auto & v : solution)
-        *_imp->proof_stream << " x" << _imp->binary_variable_mappings[v];
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " x", _imp->binary_variable_mappings[v]);
+    fmt::println(_imp->log_filename, "");
     ++_imp->proof_line;
 }
 
 auto Proof::new_incumbent(const vector<pair<int, bool> > & solution) -> void
 {
-    *_imp->proof_stream << "o";
+    fmt::print(_imp->log_filename, "o");
     for (auto & [ v, t ] : solution)
-        *_imp->proof_stream << " " << (t ? "" : "~") << "x" << _imp->binary_variable_mappings[v];
+        fmt::print(_imp->log_filename, " {}x{}", (t ? "" : "~"), _imp->binary_variable_mappings[v]);
     for (auto & [ v, w ] : _imp->zero_in_proof_objectives)
-        *_imp->proof_stream << " ~" << "x" << _imp->variable_mappings[pair{ v, w }];
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " ~x{}", _imp->variable_mappings[pair{ v, w }]);
+    fmt::println(_imp->log_filename, "");
     _imp->objective_line = ++_imp->proof_line;
 }
 
 auto Proof::new_incumbent(const vector<tuple<NamedVertex, NamedVertex, bool> > & decisions) -> void
 {
-    *_imp->proof_stream << "o";
+    fmt::print(_imp->log_filename, "o");
     for (auto & [ var, val, t ] : decisions)
-        *_imp->proof_stream << " " << (t ? "" : "~") << "x" << _imp->variable_mappings[pair{ var.first, val.first }];
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " {}x{}", (t ? "" : "~"), _imp->variable_mappings[pair{ var.first, val.first }]);
+    fmt::println(_imp->log_filename, "");
     _imp->objective_line = ++_imp->proof_line;
 }
 
@@ -485,19 +488,18 @@ auto Proof::create_exact_path_graphs(
         const vector<NamedVertex> & d_n_t
         ) -> void
 {
-    *_imp->proof_stream << "* adjacency " << p.second << " maps to " << t.second <<
-        " in G^[" << g << "x2] so " << q.second << " maps to one of..." << endl;
+    fmt::println(_imp->log_filename, "* adjacency {} maps to {} in G^[{}x2] so {} maps one of...", p.second, t.second, g, q.second);
 
-    *_imp->proof_stream << "# 1" << endl;
+    fmt::println(_imp->log_filename, "# 1");
 
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
 
     // if p maps to t then things in between_p_and_q have to go to one of these...
     bool first = true;
     for (auto & b : between_p_and_q) {
-        *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, p.first, b.first, t.first }];
+        fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ 0, p.first, b.first, t.first }]);
         if (! first)
-            *_imp->proof_stream << " +";
+            fmt::print(_imp->log_filename, " +");
         first = false;
     }
 
@@ -507,30 +509,30 @@ auto Proof::create_exact_path_graphs(
             // due to loops or labels, it might not be possible to map to w
             auto i = _imp->adjacency_lines.find(tuple{ 0, b.first, q.first, w.first });
             if (i != _imp->adjacency_lines.end())
-                *_imp->proof_stream << " " << i->second << " +";
+                fmt::print(_imp->log_filename, " {} +", i->second);
         }
     }
 
-    *_imp->proof_stream << " 0" << endl;
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
     // first tidy-up step: if p maps to t then q maps to something a two-walk away from t
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : two_away_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     // if p maps to t then q does not map to t
-    *_imp->proof_stream << "p " << _imp->proof_line << " " << _imp->injectivity_constraints[t.first] << " + 0" << endl;
+    fmt::println(_imp->log_filename, "p {} {} + 0", _imp->proof_line, _imp->injectivity_constraints[t.first]);
     ++_imp->proof_line;
 
     // and cancel out stray extras from injectivity
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : two_away_from_t)
         if (u.first != t)
-            *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+            fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     vector<long> things_to_add_up;
@@ -541,56 +543,55 @@ auto Proof::create_exact_path_graphs(
         if ((u.first == t) || (d_n_t.end() != find(d_n_t.begin(), d_n_t.end(), u.first)))
             continue;
 
-        *_imp->proof_stream << "p";
+        fmt::print(_imp->log_filename, "p");
         bool first = true;
         for (auto & b : between_p_and_q) {
-            *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, p.first, b.first, t.first }];
+            fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ 0, p.first, b.first, t.first }]);
             if (! first)
-                *_imp->proof_stream << " +";
+                fmt::print(_imp->log_filename, " +");
             first = false;
-            *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, q.first, b.first, u.first.first }] << " +";
-            *_imp->proof_stream << " " << _imp->at_most_one_value_constraints[b.first] << " +";
+            fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ 0, q.first, b.first, u.first.first }]);
+            fmt::print(_imp->log_filename, " () +", _imp->at_most_one_value_constraints[b.first]);
         }
 
         for (auto & z : u.second)
-            *_imp->proof_stream << " " << _imp->injectivity_constraints[z.first] << " +";
+            fmt::print(_imp->log_filename, " {} +", _imp->injectivity_constraints[z.first]);
 
-        *_imp->proof_stream << " 0" << endl;
+        fmt::println(_imp->log_filename, " 0");
         ++_imp->proof_line;
 
         // want: ~x_p_t + ~x_q_u >= 1
-        *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }]
-            << " 1 ~x" << _imp->variable_mappings[pair{ q.first, u.first.first }] << " >= 1 ;" << endl;
+        fmt::println(_imp->log_filename, "j {} 1 ~x{} 1 ~x{} >= 1 ;", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, u.first.first }]);
         things_to_add_up.push_back(++_imp->proof_line);
     }
 
     // do the getting rid of
     if (things_to_add_up.size() > 1) {
         bool first = true;
-        *_imp->proof_stream << "p";
+        fmt::print(_imp->log_filename, "p");
         for (auto & t : things_to_add_up) {
-            *_imp->proof_stream << " " << t;
+            fmt::print(_imp->log_filename, " {}", t);
             if (! first)
-                *_imp->proof_stream << " +";
+                fmt::print(_imp->log_filename, " +");
             first = false;
         }
-        *_imp->proof_stream << " 0" << endl;
+        fmt::println(_imp->log_filename, " 0");
         ++_imp->proof_line;
     }
 
-    *_imp->proof_stream << "# 0" << endl;
+    fmt::println(_imp->log_filename, "# 0");
 
     // and finally, tidy up to get what we wanted
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d_n_t)
         if (u != t)
-            *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+            fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     _imp->adjacency_lines.emplace(tuple{ g, p.first, q.first, t.first }, _imp->proof_line);
 
-    *_imp->proof_stream << "w 1" << endl;
+    fmt::println(_imp->log_filename, "w 1");
 }
 
 auto Proof::hack_in_shape_graph(
@@ -601,12 +602,11 @@ auto Proof::hack_in_shape_graph(
         const std::vector<NamedVertex> & n_t
         ) -> void
 {
-    *_imp->proof_stream << "* adjacency " << p.second << " maps to " << t.second <<
-        " in shape graph " << g << " so " << q.second << " maps to one of..." << endl;
-    *_imp->proof_stream << "a 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::println(_imp->log_filename, "* adjacency {} maps to {} in shape graph {} so {} maps to one of...", p.second, t.second, g, q.second);
+    fmt::print(_imp->log_filename, "a 1 ~x{}", _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : n_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     _imp->adjacency_lines.emplace(tuple{ g, p.first, q.first, t.first }, _imp->proof_line);
@@ -619,14 +619,12 @@ auto Proof::create_distance3_graphs_but_actually_distance_1(
         const NamedVertex & t,
         const vector<NamedVertex> & d3_from_t) -> void
 {
-    *_imp->proof_stream << "* adjacency " << p.second << " maps to " << t.second <<
-        " in G^3 so by adjacency, " << q.second << " maps to one of..." << endl;
+    fmt::println(_imp->log_filename, "* adjacency {} maps to {} in G^3 so by adjacency, {} maps to one of...", p.second, t.second, q.second);
 
-    *_imp->proof_stream << "j " << _imp->adjacency_lines[tuple{ 0, p.first, q.first, t.first }]
-        << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->adjacency_lines[tuple{ 0, p.first, q.first, t.first }], _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d3_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     _imp->adjacency_lines.emplace(tuple{ g, p.first, q.first, t.first }, _imp->proof_line);
@@ -643,35 +641,34 @@ auto Proof::create_distance3_graphs_but_actually_distance_2(
         const vector<NamedVertex> & d3_from_t
         ) -> void
 {
-    *_imp->proof_stream << "* adjacency " << p.second << " maps to " << t.second <<
-        " in G^3 so using vertex " << path_from_p_to_q.second << ", " << q.second << " maps to one of..." << endl;
+    fmt::println(_imp->log_filename, "* adjacency {} maps to {} in G^3 so using vertex {}, {} maps to one of...", p.second, t.second, path_from_p_to_q.second, q.second);
 
-    *_imp->proof_stream << "# 1" << endl;
+    fmt::println(_imp->log_filename, "# 1");
 
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
 
     // if p maps to t then the first thing on the path from p to q has to go to one of...
-    *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, p.first, path_from_p_to_q.first, t.first }];
+    fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ 0, p.first, path_from_p_to_q.first, t.first }]);
     // so the second thing on the path from p to q has to go to one of...
     for (auto & u : d1_from_t)
-        *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, path_from_p_to_q.first, q.first, u.first }] << " +";
+        fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ 0, path_from_p_to_q.first, q.first, u.first }]);
 
-    *_imp->proof_stream << " 0" << endl;
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
     // tidy up
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d2_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "# 0" << endl;
+    fmt::println(_imp->log_filename, "# 0");
 
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d3_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     _imp->adjacency_lines.emplace(tuple{ g, p.first, q.first, t.first }, _imp->proof_line);
@@ -689,41 +686,40 @@ auto Proof::create_distance3_graphs(
         const vector<NamedVertex> & d3_from_t
         ) -> void
 {
-    *_imp->proof_stream << "* adjacency " << p.second << " maps to " << t.second <<
-        " in G^3 so using path " << path_from_p_to_q_1.second << " -- " << path_from_p_to_q_2.second << ", " << q.second << " maps to one of..." << endl;
+    fmt::println(_imp->log_filename, "* adjacency {} maps to {} in G^3 so using path {} -- {}, {} maps to one of...", p.second, t.second, path_from_p_to_q_1.second, path_from_p_to_q_2.second, q.second);
 
-    *_imp->proof_stream << "# 1" << endl;
+    fmt::println(_imp->log_filename, "# 1");
 
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
 
     // if p maps to t then the first thing on the path from p to q has to go to one of...
-    *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, p.first, path_from_p_to_q_1.first, t.first }];
+    fmt::print(_imp->log_filename, " {}", _imp->adjacency_lines[tuple{ 0, p.first, path_from_p_to_q_1.first, t.first }]);
     // so the second thing on the path from p to q has to go to one of...
     for (auto & u : d1_from_t)
-        *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, path_from_p_to_q_1.first, path_from_p_to_q_2.first, u.first }] << " +";
+        fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ 0, path_from_p_to_q_1.first, path_from_p_to_q_2.first, u.first }]);
 
-    *_imp->proof_stream << " 0" << endl;
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
     // tidy up
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d2_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ path_from_p_to_q_2.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ path_from_p_to_q_2.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "p " << _imp->proof_line;
+    fmt::print(_imp->log_filename, "p {}", _imp->proof_line);
     for (auto & u : d2_from_t)
-        *_imp->proof_stream << " " << _imp->adjacency_lines[tuple{ 0, path_from_p_to_q_2.first, q.first, u.first }] << " +";
-    *_imp->proof_stream << " 0" << endl;
+        fmt::print(_imp->log_filename, " {} +", _imp->adjacency_lines[tuple{ 0, path_from_p_to_q_2.first, q.first, u.first }]);
+    fmt::println(_imp->log_filename, " 0");
     ++_imp->proof_line;
 
-    *_imp->proof_stream << "# 0" << endl;
+    fmt::println(_imp->log_filename, "# 0");
 
-    *_imp->proof_stream << "j " << _imp->proof_line << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+    fmt::print(_imp->log_filename, "j {} 1 ~x{}", _imp->proof_line, _imp->variable_mappings[pair{ p.first, t.first }]);
     for (auto & u : d3_from_t)
-        *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.first }];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.first }]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 
     _imp->adjacency_lines.emplace(tuple{ g, p.first, q.first, t.first }, _imp->proof_line);
@@ -786,21 +782,21 @@ auto Proof::create_non_null_decision_bound(int p, int t, optional<int> d) -> voi
 auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
 {
     if (! _imp->doing_hom_colour_proof) {
-        *_imp->proof_stream << "u";
+        fmt::print(_imp->log_filename, "u");
         for (auto & w : v)
-            *_imp->proof_stream << " 1 ~x" << _imp->binary_variable_mappings[w];
-        *_imp->proof_stream << " >= 1 ;" << endl;
+            fmt::print(_imp->log_filename, " 1 ~x{}", _imp->binary_variable_mappings[w]);
+        fmt::println(_imp->log_filename, " >= 1 ;");
         ++_imp->proof_line;
     }
     else {
-        *_imp->proof_stream << "* backtrack shenanigans, depth " << v.size() << endl;
+        fmt::println(_imp->log_filename, "* backtrack shenanigans, depth {}", v.size());
         function<auto (unsigned, const vector<pair<int, int> > &) -> void> f;
         f = [&] (unsigned d, const vector<pair<int, int> > & trail) -> void {
             if (d == v.size()) {
-                *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ _imp->hom_colour_proof_p.first, _imp->hom_colour_proof_t.first }];
+                fmt::print(_imp->log_filename, "u 1 ~x{}", _imp->variable_mappings[pair{ _imp->hom_colour_proof_p.first, _imp->hom_colour_proof_t.first }]);
                 for (auto & t : trail)
-                    *_imp->proof_stream << " 1 ~x" << _imp->variable_mappings[t];
-                *_imp->proof_stream << " >= 1 ;" << endl;
+                    fmt::print(_imp->log_filename, " 1 ~x{}", _imp->variable_mappings[t]);
+                fmt::println(_imp->log_filename, " >= 1 ;");
                 ++_imp->proof_line;
             }
             else {
@@ -817,28 +813,28 @@ auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
 
 auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
 {
-    *_imp->proof_stream << "* bound, ccs";
+    fmt::print(_imp->log_filename, "* bound, ccs");
     for (auto & cc : ccs) {
-        *_imp->proof_stream << " [";
+        fmt::print(_imp->log_filename, " [");
         for (auto & c : cc)
-            *_imp->proof_stream << " " << c;
-        *_imp->proof_stream << " ]";
+            fmt::print(_imp->log_filename, " {}", c);
+        fmt::print(_imp->log_filename, " ]");
     }
-    *_imp->proof_stream << endl;
+    fmt::println(_imp->log_filename, "");
 
     vector<long> to_sum;
     auto do_one_cc = [&] (const auto & cc, const auto & non_edge_constraint) {
         if (cc.size() > 2) {
-            *_imp->proof_stream << "p " << non_edge_constraint(cc[0], cc[1]);
+            fmt::print(_imp->log_filename, "p {}", non_edge_constraint(cc[0], cc[1]));
 
             for (unsigned i = 2 ; i < cc.size() ; ++i) {
-                *_imp->proof_stream << " " << i << " *";
+                fmt::print(_imp->log_filename, " {} *", i);
                 for (unsigned j = 0 ; j < i ; ++j)
-                    *_imp->proof_stream << " " << non_edge_constraint(cc[i], cc[j]) << " +";
-                *_imp->proof_stream << " " << (i + 1) << " d";
+                    fmt::print(_imp->log_filename, " {} +", non_edge_constraint(cc[i], cc[j]));
+                fmt::print(_imp->log_filename, " {} d", (i + 1));
             }
 
-            *_imp->proof_stream << endl;
+            fmt::println(_imp->log_filename, "");
             to_sum.push_back(++_imp->proof_line);
         }
         else if (cc.size() == 2) {
@@ -853,10 +849,10 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
                 for (auto & v : _imp->p_clique)
                     bigger_cc.push_back(pair{ v, _imp->t_clique_neighbourhood.find(c)->second });
 
-            *_imp->proof_stream << "* colour class [";
+            fmt::print(_imp->log_filename, "* colour class [");
             for (auto & c : bigger_cc)
-                *_imp->proof_stream << " " << c.first.second << "/" << c.second.second;
-            *_imp->proof_stream << " ]" << endl;
+                fmt::print(_imp->log_filename, " {}/{}", c.first.second, c.second.second);
+            fmt::println(_imp->log_filename, " ]");
 
             do_one_cc(bigger_cc, [&] (const pair<NamedVertex, NamedVertex> & a, const pair<NamedVertex, NamedVertex> & b) -> long {
                     return _imp->clique_for_hom_non_edge_constraints[pair{ a, b }];
@@ -865,18 +861,18 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
         else
             do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }]; });
 
-        *_imp->proof_stream << "p " << _imp->objective_line;
+        fmt::print(_imp->log_filename, "p {}", _imp->objective_line);
         for (auto & t : to_sum)
-            *_imp->proof_stream << " " << t << " +";
-        *_imp->proof_stream << endl;
+            fmt::print(_imp->log_filename, " {} +", t);
+        fmt::println(_imp->log_filename, "");
         ++_imp->proof_line;
     }
 }
 
 auto Proof::prepare_hom_clique_proof(const NamedVertex & p, const NamedVertex & t, unsigned size) -> void
 {
-    *_imp->proof_stream << "* clique of size " << size << " around neighbourhood of " << p.second << " but not " << t.second << endl;
-    *_imp->proof_stream << "# 1" << endl;
+    fmt::println(_imp->log_filename, "* clique of size {} around neighbourhood of {} but not {}", size, p.second, t.second);
+    fmt::println(_imp->log_filename, "# 1");
     _imp->doing_hom_colour_proof = true;
     _imp->hom_colour_proof_p = p;
     _imp->hom_colour_proof_t = t;
@@ -887,47 +883,47 @@ auto Proof::start_hom_clique_proof(const NamedVertex & p, vector<NamedVertex> &&
     _imp->p_clique = move(p_clique);
     _imp->t_clique_neighbourhood = move(t_clique_neighbourhood);
 
-    *_imp->proof_stream << "* hom clique objective" << endl;
+    fmt::println(_imp->log_filename, "* hom clique objective");
     vector<long> to_sum;
     for (auto & q : _imp->p_clique) {
-        *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }];
+        fmt::print(_imp->log_filename, "u 1 ~x{}", _imp->variable_mappings[pair{ p.first, t.first }]);
         for (auto & u : _imp->t_clique_neighbourhood)
-            *_imp->proof_stream << " 1 x" << _imp->variable_mappings[pair{ q.first, u.second.first }];
-        *_imp->proof_stream << " >= 1 ;" << endl;
+            fmt::print(_imp->log_filename, " 1 x{}", _imp->variable_mappings[pair{ q.first, u.second.first }]);
+        fmt::println(_imp->log_filename, " >= 1 ;");
         to_sum.push_back(++_imp->proof_line);
     }
 
-    *_imp->proof_stream << "p";
+    fmt::print(_imp->log_filename, "p");
     bool first = true;
     for (auto & t : to_sum) {
-        *_imp->proof_stream << " " << t;
+        fmt::print(_imp->log_filename, " {}", t);
         if (! first)
-            *_imp->proof_stream << " +";
+            fmt::print(_imp->log_filename, " +");
         first = false;
     }
-    *_imp->proof_stream << endl;
+    fmt::println(_imp->log_filename, "");
     _imp->objective_line = ++_imp->proof_line;
 
-    *_imp->proof_stream << "* hom clique non edges for injectivity" << endl;
+    fmt::println(_imp->log_filename, "* hom clique non edges for injectivity");
 
     for (auto & p : _imp->p_clique)
         for (auto & q : _imp->p_clique)
             if (p != q) {
                 for (auto & [ _, t ] : _imp->t_clique_neighbourhood) {
-                    *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }] << " 1 ~x" << _imp->variable_mappings[pair{ q.first, t.first }] << " >= 1 ;" << endl;
+                    fmt::println(_imp->log_filename, "u 1 ~x{} 1 ~x{} >= 1 ;", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, t.first }]);
                     ++_imp->proof_line;
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ q, t } }, _imp->proof_line);
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ q, t }, pair{ p, t } }, _imp->proof_line);
                 }
             }
 
-    *_imp->proof_stream << "* hom clique non edges for variables" << endl;
+    fmt::println(_imp->log_filename, "* hom clique non edges for variables");
 
     for (auto & p : _imp->p_clique)
         for (auto & [ _, t ] : _imp->t_clique_neighbourhood) {
             for (auto & [ _, u ] : _imp->t_clique_neighbourhood) {
                 if (t != u) {
-                    *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }] << " 1 ~x" << _imp->variable_mappings[pair{ p.first, u.first }] << " >= 1 ;" << endl;
+                    fmt::println(_imp->log_filename, "u 1 ~x{} 1 ~x{} >= 1 ;", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ p.first, u.first }]);
                     ++_imp->proof_line;
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ p, u } }, _imp->proof_line);
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, u }, pair{ p, t } }, _imp->proof_line);
@@ -938,10 +934,10 @@ auto Proof::start_hom_clique_proof(const NamedVertex & p, vector<NamedVertex> &&
 
 auto Proof::finish_hom_clique_proof(const NamedVertex & p, const NamedVertex & t, unsigned size) -> void
 {
-    *_imp->proof_stream << "* end clique of size " << size << " around neighbourhood of " << p.second << " but not " << t.second << endl;
-    *_imp->proof_stream << "# 0" << endl;
-    *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }] << " >= 1 ;" << endl;
-    *_imp->proof_stream << "w 1" << endl;
+    fmt::println(_imp->log_filename, "* end clique of size {} around neighbourhood of {} but not {}", size, p.second, t.second);
+    fmt::println(_imp->log_filename, "# 0");
+    fmt::println(_imp->log_filename, "u 1 ~x{} >= 1 ;", _imp->variable_mappings[pair{ p.first, t.first }]);
+    fmt::println(_imp->log_filename, "w 1");
     ++_imp->proof_line;
     _imp->doing_hom_colour_proof = false;
     _imp->clique_for_hom_non_edge_constraints.clear();
@@ -954,13 +950,11 @@ auto Proof::add_hom_clique_non_edge(
         const NamedVertex & t,
         const NamedVertex & u) -> void
 {
-    *_imp->proof_stream << "* hom clique non edges for " << t.second << " " << u.second << endl;
+    fmt::println(_imp->log_filename, "* hom clique non edges for {} {}", t.second, u.second);
     for (auto & p : p_clique) {
         for (auto & q : p_clique) {
             if (p != q) {
-                *_imp->proof_stream << "u 1 ~x" << _imp->variable_mappings[pair{ pp.first, tt.first }]
-                    << " 1 ~x" << _imp->variable_mappings[pair{ p.first, t.first }]
-                    << " 1 ~x" << _imp->variable_mappings[pair{ q.first, u.first }] << " >= 1 ;" << endl;
+                fmt::println(_imp->log_filename, "u 1 ~x{} 1 ~x{} 1 ~x{} >= 1 ;", _imp->variable_mappings[pair{ pp.first, tt.first }], _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, u.first }]);
                 ++_imp->proof_line;
                 _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ q, u } }, _imp->proof_line);
                 _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ q, u }, pair{ p, t } }, _imp->proof_line);
@@ -972,45 +966,45 @@ auto Proof::add_hom_clique_non_edge(
 auto Proof::mcs_bound(
         const vector<pair<set<int>, set<int> > > & partitions) -> void
 {
-    *_imp->proof_stream << "* failed bound" << endl;
+    fmt::println(_imp->log_filename, "* failed bound");
 
     vector<string> to_sum;
     for (auto & [ l, r ] : partitions) {
         if (r.size() >= l.size())
             continue;
 
-        *_imp->proof_stream << "p";
+        fmt::print(_imp->log_filename, "p");
         bool first = true;
         for (auto & v : l) {
-            *_imp->proof_stream << " " << _imp->at_least_one_value_constraints[v];
+            fmt::print(_imp->log_filename, " {}", _imp->at_least_one_value_constraints[v]);
            if (first)
               first = false;
            else
-              *_imp->proof_stream << " +";
+              fmt::print(_imp->log_filename, " +");
         }
         for (auto & v : r)
-            *_imp->proof_stream << " " << _imp->injectivity_constraints[v] << " +";
+            fmt::print(_imp->log_filename, " {} +", _imp->injectivity_constraints[v]);
 
-        *_imp->proof_stream << endl;
+        fmt::println(_imp->log_filename, "");
         to_sum.push_back(to_string(++_imp->proof_line));
     }
 
     if (! to_sum.empty()) {
-        *_imp->proof_stream << "p " << _imp->objective_line;
+        fmt::print(_imp->log_filename, "p {}", _imp->objective_line);
         for (auto & t : to_sum)
-            *_imp->proof_stream << " " << t << " +";
-        *_imp->proof_stream << endl;
+            fmt::print(_imp->log_filename, " {} +", t);
+        fmt::println(_imp->log_filename, "");
         ++_imp->proof_line;
     }
 }
 
 auto Proof::rewrite_mcs_objective(int pattern_size) -> void
 {
-    *_imp->proof_stream << "* get the objective function to talk about nulls, not non-nulls" << endl;
-    *_imp->proof_stream << "p " << _imp->objective_line;
+    fmt::println(_imp->log_filename, "* get the objective function to talk about nulls, not non-nulls");
+    fmt::print(_imp->log_filename, "p {}", _imp->objective_line);
     for (int v = 0 ; v < pattern_size ; ++v)
-        *_imp->proof_stream << " " << _imp->at_most_one_value_constraints[v] << " +";
-    *_imp->proof_stream << endl;
+        fmt::print(_imp->log_filename, " {} +", _imp->at_most_one_value_constraints[v]);
+    fmt::println(_imp->log_filename, "");
     _imp->objective_line = ++_imp->proof_line;
 }
 
@@ -1105,10 +1099,10 @@ auto Proof::create_connected_constraints(int p, int t, const function<auto (int,
 
 auto Proof::not_connected_in_underlying_graph(const std::vector<int> & x, int y) -> void
 {
-    *_imp->proof_stream << "u 1 ~x" << _imp->binary_variable_mappings[y];
+    fmt::print(_imp->log_filename, "u 1 ~x{}", _imp->binary_variable_mappings[y]);
     for (auto & v : x)
-        *_imp->proof_stream << " 1 ~x" << _imp->binary_variable_mappings[v];
-    *_imp->proof_stream << " >= 1 ;" << endl;
+        fmt::print(_imp->log_filename, " 1 ~x{}", _imp->binary_variable_mappings[v]);
+    fmt::println(_imp->log_filename, " >= 1 ;");
     ++_imp->proof_line;
 }
 
@@ -1130,8 +1124,7 @@ auto Proof::create_clique_encoding(
 
 auto Proof::create_clique_nonedge(int v, int w) -> void
 {
-    *_imp->proof_stream << "u 1 ~x" << _imp->binary_variable_mappings[v]
-        << " 1 ~x" << _imp->binary_variable_mappings[w] << " >= 1 ;" << endl;
+    fmt::println(_imp->log_filename, "u 1 ~x{} 1 ~x{} >= 1 ;", _imp->binary_variable_mappings[v], _imp->binary_variable_mappings[w]);
     ++_imp->proof_line;
     _imp->non_edge_constraints.emplace(pair{ v, w }, _imp->proof_line);
     _imp->non_edge_constraints.emplace(pair{ w, v }, _imp->proof_line);
@@ -1144,17 +1137,17 @@ auto Proof::super_extra_verbose() const -> bool
 
 auto Proof::show_domains(const string & s, const std::vector<std::pair<NamedVertex, std::vector<NamedVertex> > > & domains) -> void
 {
-    *_imp->proof_stream << "* " << s << ", domains follow" << endl;
+    fmt::println(_imp->log_filename, "* {} domains follow", s);
     for (auto & [ p, ts ] : domains) {
-        *_imp->proof_stream << "*    " << p.second << " size " << ts.size() << " = {";
+        fmt::print(_imp->log_filename, "*    {} size {} = {", p.second, ts.size());
         for (auto & t : ts)
-            *_imp->proof_stream << " " << t.second;
-        *_imp->proof_stream << " }" << endl;
+            fmt::print(_imp->log_filename, " {}", t.second);
+        fmt::println(_imp->log_filename, " }");
     }
 }
 
 auto Proof::propagated(const NamedVertex & p, const NamedVertex & t, int g, int n_values, const NamedVertex & q) -> void
 {
-    *_imp->proof_stream << "* adjacency propagation from " << p.second << " -> " << t.second << " in graph pairs " << g << " deleted " << n_values << " values from " << q.second << endl;
+    fmt::println(_imp->log_filename, "* adjacency propagation from {} -> {} in graph pairs {} deleted {} values from {}", p.second, t.second, g, n_values, q.second);
 }
 
