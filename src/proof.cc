@@ -45,6 +45,7 @@ using boost::iostreams::filtering_ostream;
 
 /* There will be 3/4 versions of this code to reflect the different test version that will be run */
 /* Preproccessing code will be used to seperate them - comments will give the name of the flag required at compilation */
+#define NEWLINE
 
 #ifdef NEWLINE
 namespace
