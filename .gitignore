@@ -13,3 +13,4 @@ perf.data.old
 *.log
 *.opb
 *.veripb
+test-instances/
