@@ -13,5 +13,5 @@ perf.data.old
 *.log
 *.opb
 *.veripb
-test-instances/
+test-instances/DIMACS_all_ascii/
 build/
