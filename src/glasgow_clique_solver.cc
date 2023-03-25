@@ -141,21 +141,21 @@ auto main(int argc, char * argv[]) -> int
 #if !defined(_WIN32)
         char hostname_buf[255];
         if (0 == gethostname(hostname_buf, 255))
-            cout << "hostname = " << string(hostname_buf) << endl;
+            cout << "hostname = " << string(hostname_buf) << ",";
 #endif
         cout << "commandline =";
         for (int i = 0 ; i < argc ; ++i)
             cout << " " << argv[i];
-        cout << endl;
+        cout << ",";
 
         auto started_at = system_clock::to_time_t(system_clock::now());
-        cout << "started_at = " << put_time(localtime(&started_at), "%F %T") << endl;
+        cout << "started_at = " << put_time(localtime(&started_at), "%F %T") << ",";
 
         /* Read in the graphs */
         string pattern_format_name = options_vars.count("format") ? options_vars["format"].as<string>() : "auto";
         auto graph = read_file_format(pattern_format_name, options_vars["graph-file"].as<string>());
 
-        cout << "file = " << options_vars["graph-file"].as<string>() << endl;
+        cout << "file = " << options_vars["graph-file"].as<string>() << ",";
 
         if (options_vars.count("prove")) {
             bool friendly_names = options_vars.count("proof-names");
@@ -163,8 +163,8 @@ auto main(int argc, char * argv[]) -> int
             string fn = options_vars["prove"].as<string>();
             string suffix = compress_proof ? ".bz2" : "";
             params.proof = make_unique<Proof>(fn + ".opb", fn + ".veripb", friendly_names, compress_proof);
-            cout << "proof_model = " << fn << ".opb" << suffix << endl;
-            cout << "proof_log = " << fn << ".veripb" << suffix << endl;
+            cout << "proof_model = " << fn << ".opb" << suffix << ",";
+            cout << "proof_log = " << fn << ".veripb" << suffix << ",";
         }
 
         /* Prepare and start timeout */
@@ -187,16 +187,16 @@ auto main(int argc, char * argv[]) -> int
             cout << "true";
         else
             cout << "false";
-        cout << endl;
+        cout << ",";
 
-        cout << "nodes = " << result.nodes << endl;
+        cout << "nodes = " << result.nodes << ",";
 
         if (! result.clique.empty()) {
-            cout << "omega = " << result.clique.size() << endl;
+            cout << "omega = " << result.clique.size() << ",";
             cout << "clique =";
             for (auto v : result.clique)
                 cout << " " << graph.vertex_name(v);
-            cout << endl;
+            cout << ",";
         }
 
         cout << "runtime = " << overall_time.count() << endl;

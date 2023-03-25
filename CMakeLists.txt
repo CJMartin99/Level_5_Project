@@ -3,7 +3,22 @@ cmake_minimum_required(VERSION 3.1)
 project(glasgow-clique-solver LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
+SET(CODETYPE "option_value" CACHE STRING "Some user-specified option")
+
+if (CODETYPE STREQUAL "original")
+    message(STATUS "matched original")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DORIGINAL -pthread")
+elseif(CODETYPE STREQUAL "newline")
+    message(STATUS "matched newline")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNEWLINE -pthread")
+elseif(CODETYPE STREQUAL "fmt")
+    message(STATUS "matched fmt")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFMT -pthread")
+elseif(CODETYPE STREQUAL "colour")
+    message(STATUS "matched colour")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DORIGINAL -DCOLOUR -pthread")
+endif()
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/lib)
