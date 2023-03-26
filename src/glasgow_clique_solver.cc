@@ -199,7 +199,7 @@ auto main(int argc, char * argv[]) -> int
             cout << ",";
         }
 
-        cout << "runtime = " << overall_time.count() << endl;
+        cout << overall_time.count() << endl;
 
         for (const auto & s : result.extra_stats)
             cout << s << endl;

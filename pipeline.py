@@ -61,28 +61,28 @@ def main():
     run_instances(hardware, "Original")
 
     # compile code for 2nd test - /n code
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=newline')
-    os.system('make')
-    os.chdir(cwd)
+    #os.chdir(cwd + '/build')
+    #os.system('cmake .. -DCODETYPE:STRING=newline')
+    #os.system('make')
+    #os.chdir(cwd)
     # for each test instance record runtime
-    run_instances(hardware, "Newline")
+    #run_instances(hardware, "Newline")
 
     # compile code for 3rd test - fmt lib
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=fmt')
-    os.system('make')
-    os.chdir(cwd)
+    #os.chdir(cwd + '/build')
+    #os.system('cmake .. -DCODETYPE:STRING=fmt')
+    #os.system('make')
+    #os.chdir(cwd)
     # for each test instance record runtime
-    run_instances(hardware, "FMT")
+    #run_instances(hardware, "FMT")
 
     # compile code for 4th test - colour classes fix
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=colour')
-    os.system('make')
-    os.chdir(cwd)
+    #os.chdir(cwd + '/build')
+    #os.system('cmake .. -DCODETYPE:STRING=colour')
+    #os.system('make')
+    #os.chdir(cwd)
     # for each test instance record runtime
-    run_instances(hardware, "Colour_Class")
+    #run_instances(hardware, "Colour_Class")
 
 if __name__ == "__main__":
     main()
