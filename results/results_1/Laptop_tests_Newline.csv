@@ -1,0 +1,2 @@
+hostname,commandline,started_at,file,proof_model,proof_log,status,nodes,omega,clique,runtime
+hostname = DESKTOP-QGK7532,commandline = ./glasgow_clique_solver --prove proof_outputs/brock200_2_proof test-instances/DIMACS_all_ascii/brock200_2.clq,started_at = 2023-03-25 19:57:18,file = test-instances/DIMACS_all_ascii/brock200_2.clq,proof_model = proof_outputs/brock200_2_proof.opb,proof_log = proof_outputs/brock200_2_proof.veripb,status = true,nodes = 3757,omega = 12,clique = 27 48 55 70 105 120 121 135 145 149 158 183,runtime = 759

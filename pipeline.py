@@ -29,17 +29,23 @@ test_cases = [
 ]
 
 def run_instances(hardware, run_type):
-    # Manually set the name of the results file based on hardware - CHANGE
-    output_filename = hardware + "_tests_" + run_type + ".csv"
-    #create file and populate first row
-    with open(output_filename, "w") as f:
-        f.write("hostname,commandline,started_at,file,proof_model,proof_log,status,nodes,omega,clique,runtime\n")
+    # Control how many times the instances are run for each code test case
+    temp_cwd = os.getcwd()
+    for i in range (1):
+        os.chdir(temp_cwd + "/results/results_" + str(i))
+        # Manually set the name of the results file based on hardware
+        output_filename = hardware + "_tests_" + run_type + ".csv"
+        #create file and populate first row
+        with open(output_filename, "w") as f:
+            f.write("hostname,commandline,started_at,file,proof_model,proof_log,status,nodes,omega,clique,runtime\n")
 
-    for filename in small_test:
-        output_string = "Running test instance: " + filename + " on code version " + run_type
-        print(output_string)
-        proofname = "proof_outputs/" + filename[:-4] + "_proof"
-        os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
+        os.chdir(temp_cwd)
+        output_filename = "results/results_" + str(i) + "/" + output_filename
+        for filename in test_cases: # CHANGE
+            output_string = "Running test instance: " + filename + " on code version " + run_type
+            print(output_string)
+            proofname = "proof_outputs/" + filename[:-4] + "_proof"
+            os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
 
 def main():
     
@@ -77,9 +83,6 @@ def main():
     os.chdir(cwd)
     # for each test instance record runtime
     run_instances(hardware, "Colour_Class")
-
-    # graphing code - only run after each hardware has been run?
-    # graphs for each test - grouped by hardware
 
 if __name__ == "__main__":
     main()
