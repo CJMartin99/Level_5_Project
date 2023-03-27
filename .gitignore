@@ -13,5 +13,6 @@ perf.data.old
 *.log
 *.opb
 *.veripb
+*.png
 test-instances/DIMACS_all_ascii/
 build/
