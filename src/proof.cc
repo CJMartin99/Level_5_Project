@@ -213,7 +213,9 @@ auto Proof::finalise_model() -> void
 
 auto Proof::finish_unsat_proof() -> void
 {
+#ifndef COMMENTS
     *_imp->proof_stream << "* asserting that we've proved unsat" << endl;
+#endif
     *_imp->proof_stream << "u >= 1 ;" << endl;
     ++_imp->proof_line;
     *_imp->proof_stream << "c " << _imp->proof_line << " 0" << endl;
@@ -426,7 +428,9 @@ auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
         ++_imp->proof_line;
     }
     else {
+#ifndef COMMENTS
         *_imp->proof_stream << "* backtrack shenanigans, depth " << v.size() << endl;
+#endif
         function<auto (unsigned, const vector<pair<int, int> > &) -> void> f;
         f = [&] (unsigned d, const vector<pair<int, int> > & trail) -> void {
             if (d == v.size()) {
@@ -450,6 +454,7 @@ auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
 
 auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
 {
+#ifndef COMMENTS
     *_imp->proof_stream << "* bound, ccs";
     for (auto & cc : ccs) {
         *_imp->proof_stream << " [";
@@ -458,6 +463,7 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
         *_imp->proof_stream << " ]";
     }
     *_imp->proof_stream << endl;
+#endif
 
     vector<long> to_sum;
     auto do_one_cc = [&] (const auto & cc, const auto & non_edge_constraint) {
