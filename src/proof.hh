@@ -155,6 +155,9 @@ class Proof
         auto create_binary_variable(int vertex,
                 const std::function<auto (int) -> std::string> & name) -> void;
         auto create_objective(int n, std::optional<int> d) -> void;
+#ifdef VECTOR
+        auto create_non_edge_constraint_vector(int n) -> void;
+#endif
         auto create_non_edge_constraint(int p, int q) -> void;
         auto backtrack_from_binary_variables(const std::vector<int> &) -> void;
         auto colour_bound(const std::vector<std::vector<int> > &) -> void;

@@ -86,7 +86,13 @@ struct Proof::Imp
     map<long, long> at_least_one_value_constraints, at_most_one_value_constraints, injectivity_constraints;
     map<tuple<long, long, long, long>, long> adjacency_lines;
     map<pair<long, long>, long> eliminations;
+
+    #ifdef VECTOR
+    vector<vector<int>> non_edge_constraints;
+    #else
     map<pair<long, long>, long> non_edge_constraints;
+    #endif
+    
     long objective_line = 0;
 
     long nb_constraints = 0;
@@ -757,13 +763,31 @@ auto Proof::create_objective(int n, optional<int> d) -> void
     }
 }
 
+#ifdef VECTOR
+auto Proof::create_non_edge_constraint_vector(int size) -> void
+{
+    vector<vector<int>> non_edges;
+    for (int i=o; i<size, i++) {
+        vector<int> single_row;
+        single_row.assign(size,0);
+        non_edges.push_back(single_row); 
+    }
+    _imp->non_edge_constraints = non_edges;
+}
+#endif
+
 auto Proof::create_non_edge_constraint(int p, int q) -> void
 {
     _imp->model_stream << "-1 x" << _imp->binary_variable_mappings[p] << " -1 x" << _imp->binary_variable_mappings[q] << " >= -1 ;" << endl;
 
     ++_imp->nb_constraints;
+    #ifdef VECTOR
+    _imp->non_edge_constraints[p][q] = _imp->nb_constraints;
+    _imp->non_edge_constraints[q][p] = _imp->mb_constraints;
+    #else
     _imp->non_edge_constraints.emplace(pair{ p, q }, _imp->nb_constraints);
     _imp->non_edge_constraints.emplace(pair{ q, p }, _imp->nb_constraints);
+    #endif
 }
 
 auto Proof::create_non_null_decision_bound(int p, int t, optional<int> d) -> void
@@ -865,10 +889,14 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
                     });
         }
         else {
+#ifdef VECTOR
+            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[a][b]; });
+#else
             do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }]; });
+#endif
         }
 
-        #ifdef COLOUR
+#ifdef COLOUR
         if (cc.size() != 1) {
             *_imp->proof_stream << "p " << _imp->objective_line;
             for (auto & t : to_sum)
@@ -876,13 +904,13 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
             *_imp->proof_stream << endl;
             ++_imp->proof_line;
         }
-        #else
+#else
         *_imp->proof_stream << "p " << _imp->objective_line;
         for (auto & t : to_sum)
             *_imp->proof_stream << " " << t << " +";
         *_imp->proof_stream << endl;
         ++_imp->proof_line;
-        #endif
+#endif
     }
 }
 
