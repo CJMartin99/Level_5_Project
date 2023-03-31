@@ -61,78 +61,6 @@ class Proof
         // when we're done
         auto finish_unsat_proof() -> void;
 
-        // top of search failures
-        auto failure_due_to_pattern_bigger_than_target() -> void;
-
-        // domain initialisation
-        auto incompatible_by_degrees(
-                int g,
-                const NamedVertex & p,
-                const std::vector<int> & n_p,
-                const NamedVertex & t,
-                const std::vector<int> & n_t) -> void;
-
-        auto incompatible_by_nds(
-                int g,
-                const NamedVertex & p,
-                const NamedVertex & t,
-                const std::vector<int> & p_subsequence,
-                const std::vector<int> & t_subsequence,
-                const std::vector<int> & t_remaining) -> void;
-
-        auto initial_domain_is_empty(int p) -> void;
-
-        // distance 2 graphs
-        auto create_exact_path_graphs(
-                int g,
-                const NamedVertex & p,
-                const NamedVertex & q,
-                const std::vector<NamedVertex> & between_p_and_q,
-                const NamedVertex & t,
-                const std::vector<NamedVertex> & n_t,
-                const std::vector<std::pair<NamedVertex, std::vector<NamedVertex> > > & two_away_from_t,
-                const std::vector<NamedVertex> & d_n_t
-                ) -> void;
-
-        // distance 3 graphs
-        auto create_distance3_graphs_but_actually_distance_1(
-                int g,
-                const NamedVertex & p,
-                const NamedVertex & q,
-                const NamedVertex & t,
-                const std::vector<NamedVertex> & d3_from_t) -> void;
-
-        auto create_distance3_graphs_but_actually_distance_2(
-                int g,
-                const NamedVertex & p,
-                const NamedVertex & q,
-                const NamedVertex & path_from_p_to_q,
-                const NamedVertex & t,
-                const std::vector<NamedVertex> & d1_from_t,
-                const std::vector<NamedVertex> & d2_from_t,
-                const std::vector<NamedVertex> & d3_from_t
-                ) -> void;
-
-        auto create_distance3_graphs(
-                    int g,
-                    const NamedVertex & p,
-                    const NamedVertex & q,
-                    const NamedVertex & path_from_p_to_q_1,
-                    const NamedVertex & path_from_p_to_q_2,
-                    const NamedVertex & t,
-                    const std::vector<NamedVertex> & d1_from_t,
-                    const std::vector<NamedVertex> & d2_from_t,
-                    const std::vector<NamedVertex> & d3_from_t
-                ) -> void;
-
-        auto hack_in_shape_graph(
-                int g,
-                const NamedVertex & p,
-                const NamedVertex & q,
-                const NamedVertex & t,
-                const std::vector<NamedVertex> & n_t
-                ) -> void;
-
         // new constraints
         auto emit_hall_set_or_violator(const std::vector<NamedVertex> & lhs, const std::vector<NamedVertex> & rhs) -> void;
 
@@ -155,6 +83,9 @@ class Proof
         auto create_binary_variable(int vertex,
                 const std::function<auto (int) -> std::string> & name) -> void;
         auto create_objective(int n, std::optional<int> d) -> void;
+#if defined(VECTOR) || defined(MAX)
+        auto create_non_edge_constraint_vector(int n) -> void;
+#endif
         auto create_non_edge_constraint(int p, int q) -> void;
         auto backtrack_from_binary_variables(const std::vector<int> &) -> void;
         auto colour_bound(const std::vector<std::vector<int> > &) -> void;
@@ -178,17 +109,9 @@ class Proof
                 const NamedVertex & t,
                 const NamedVertex & u) -> void;
 
-        // common subgraphs
-        auto create_non_null_decision_bound(int p, int t, std::optional<int> d) -> void;
-        auto rewrite_mcs_objective(int pattern_size) -> void;
-        auto mcs_bound(
-                const std::vector<std::pair<std::set<int>, std::set<int> > > & partitions) -> void;
-        auto create_connected_constraints(int p, int t, const std::function<auto (int, int) -> bool> & adj) -> void;
-
         // common subgraph to clique
         auto has_clique_model() const -> bool;
         auto create_clique_encoding(const std::vector<std::pair<int, int> > &, const std::vector<std::pair<int, int> > &) -> void;
-        auto create_clique_nonedge(int v, int w) -> void;
         auto not_connected_in_underlying_graph(const std::vector<int> &, int) -> void;
 
         // enumeration
