@@ -83,7 +83,7 @@ class Proof
         auto create_binary_variable(int vertex,
                 const std::function<auto (int) -> std::string> & name) -> void;
         auto create_objective(int n, std::optional<int> d) -> void;
-#if defined(VECTOR) || defined(MAX)
+#ifdef VECTOR
         auto create_non_edge_constraint_vector(int n) -> void;
 #endif
         auto create_non_edge_constraint(int p, int q) -> void;

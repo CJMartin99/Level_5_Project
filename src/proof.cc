@@ -687,11 +687,9 @@ struct Proof::Imp
     map<long, long> at_least_one_value_constraints, at_most_one_value_constraints, injectivity_constraints;
     map<tuple<long, long, long, long>, long> adjacency_lines;
     map<pair<long, long>, long> eliminations;
-#ifdef MAX
-    vector<vector<int>> non_edge_constraints;
-#else
+
     map<pair<long, long>, long> non_edge_constraints;
-#endif
+
     long objective_line = 0;
 
     long nb_constraints = 0;
@@ -990,31 +988,13 @@ auto Proof::create_objective(int n, optional<int> d) -> void
     }
 }
 
-#ifdef MAX
-auto Proof::create_non_edge_constraint_vector(int size) -> void
-{
-    vector<vector<int>> non_edges;
-    for (int i=0; i<size; i++) {
-        vector<int> single_row;
-        single_row.assign(size,0);
-        non_edges.push_back(single_row); 
-    }
-    _imp->non_edge_constraints = non_edges;
-}
-#endif
-
 auto Proof::create_non_edge_constraint(int p, int q) -> void
 {
     _imp->model_stream << "-1 x" << _imp->binary_variable_mappings[p] << " -1 x" << _imp->binary_variable_mappings[q] << " >= -1 ;" << "\n";
 
     ++_imp->nb_constraints;
-    #ifdef MAX
-    _imp->non_edge_constraints[p][q] = _imp->nb_constraints;
-    _imp->non_edge_constraints[q][p] = _imp->nb_constraints;
-    #else
     _imp->non_edge_constraints.emplace(pair{ p, q }, _imp->nb_constraints);
     _imp->non_edge_constraints.emplace(pair{ q, p }, _imp->nb_constraints);
-    #endif
 }
 
 auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
@@ -1101,11 +1081,7 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
                     });
         }
         else
-#ifdef MAX
-            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[a][b]; });
-#else
-            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }]; });
-#endif
+            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }];
 
 #ifdef MAX
         if (cc.size() != 1) {

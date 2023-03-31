@@ -62,7 +62,7 @@ def run_instances(hardware, run_type):
         
         print("Starting run " + str(i+1) + " on code type: " + run_type)
         for filename in laptop_tests: # CHANGE
-            print("#",end='') #outputs a hash character per instance run
+            print("#",end='',flush=True) #outputs a hash character per instance run
             proofname = "proof_outputs/" + filename[:-4] + "_proof"
             os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
         print("")
@@ -72,43 +72,61 @@ def main():
     hardware = sys.argv[1]
     cwd = os.getcwd()
 
-    # compile code for 1st test - unaltered code
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=original')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "Original")
+    # # compile code for 1st test - unaltered code
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=original')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "Original")
 
-    # compile code for 2nd test - /n code
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=newline')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "Newline")
+    # # compile code for 2nd test - /n code
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=newline')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "Newline")
 
-    # compile code for 3rd test - fmt lib
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=fmt')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "FMT")
+    # # compile code for 3rd test - fmt lib
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=fmt')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "FMT")
 
-    # compile code for 4th test - colour classes fix
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=colour')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "Colour_Class")
+    # # compile code for 4th test - colour classes fix
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=colour')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "Colour_Class")
 
     # compile code for 5th test - vector vs map
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=vector')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Vector")
 
     # compile code for 6th test - no comments included
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=comment')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Comment")
 
-    # compile code for 7th test - max improvement attempt (newline w/ colour class fix, vector, no comments)
+    # compile code for 7th test - max improvement attempt (newline w/ colour class fix, no comments)
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=max')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Max")
 
 if __name__ == "__main__":
     main()

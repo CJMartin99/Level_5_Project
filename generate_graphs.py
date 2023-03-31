@@ -66,6 +66,9 @@ def main():
     df_cluster_cc = pd.read_csv('Cluster_tests_Colour_Class.csv')
     #df_epyc_cc = pd.read_csv('Epyc_tests_Colour_Class.csv')
 
+    df_laptop_vector = pd.read_csv('Laptop_tests_Vector.csv')
+    df_laptop_comment =  pd.read_csv('Laptop_tests_Comment.csv')
+
     # final version will be set to 10
     for i in range(1,5):
         os.chdir(cwd + "/results/results_" + str(i))
@@ -118,6 +121,14 @@ def main():
         #epyc_cc = epyc_cc['runtime']
         #df_epyc_cc['runtime'+str(i)] = epyc_cc
 
+        laptop_vector = pd.read_csv('Laptop_tests_Vector.csv')
+        laptop_vector = laptop_vector['runtime']
+        df_laptop_vector['runtime'+str(i)] = laptop_vector
+
+        laptop_comment = pd.read_csv('Laptop_tests_Comment.csv')
+        laptop_comment = laptop_comment['runtime']
+        df_laptop_comment['runtime'+str(i)] = laptop_comment
+
     os.chdir(cwd)
 
     print(df_cluster_original.head())
@@ -137,6 +148,9 @@ def main():
     for df in [df_laptop_cc,df_cluster_cc]:
         calculate_avg_runtime(df,"colour_class")
 
+    calculate_avg_runtime(df_laptop_vector, "vector")
+    calculate_avg_runtime(df_laptop_comment, "comment")
+
     # create merged dfs for each graph
     df_laptop = pd.concat([df_laptop_original,df_laptop_newline,df_laptop_fmt,df_laptop_cc])
     df_laptop = pd.melt(df_laptop,
@@ -155,21 +169,26 @@ def main():
     df_laptop_newline["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_newline['avg_runtime']
     df_laptop_fmt["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_fmt['avg_runtime']
     df_laptop_cc["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_cc['avg_runtime']
+    df_laptop_vector["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_vector['avg_runtime']
+    df_laptop_comment["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_comment['avg_runtime']
 
     df_cluster_newline["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_newline['avg_runtime']
     df_cluster_fmt["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_fmt['avg_runtime']
     df_cluster_cc["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_cc['avg_runtime']
     
     # generate graphs for each hardware comparing the different test cases - CHANGE to all runtimes rather than average
-    create_comparison_graph(df_laptop,"Laptop")
-    create_comparison_graph(df_cluster,"Cluster")
+    #create_comparison_graph(df_laptop,"Laptop")
+    #create_comparison_graph(df_cluster,"Cluster")
     #plt.clf()
-    create_speed_up_graph(df_laptop_newline,"Laptop","Newline")
-    create_speed_up_graph(df_laptop_fmt,"Laptop","FMT")
-    create_speed_up_graph(df_laptop_cc,"Laptop","Colour_Class")
-    create_speed_up_graph(df_cluster_newline,"Cluster","Newline")
-    create_speed_up_graph(df_cluster_fmt,"Cluster","FMT")
-    create_speed_up_graph(df_cluster_cc,"Cluster","Colour_Class")
+    #create_speed_up_graph(df_laptop_newline,"Laptop","Newline")
+    #create_speed_up_graph(df_laptop_fmt,"Laptop","FMT")
+    #create_speed_up_graph(df_laptop_cc,"Laptop","Colour_Class")
+    create_speed_up_graph(df_laptop_vector,"Laptop","Vector")
+    create_speed_up_graph(df_laptop_comment,"Laptop","Comment")
+
+    #create_speed_up_graph(df_cluster_newline,"Cluster","Newline")
+    #create_speed_up_graph(df_cluster_fmt,"Cluster","FMT")
+    #create_speed_up_graph(df_cluster_cc,"Cluster","Colour_Class")
     
 if __name__ == "__main__":
     main()

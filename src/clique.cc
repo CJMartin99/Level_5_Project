@@ -634,7 +634,7 @@ auto solve_clique_problem(const InputGraph & graph, const CliqueParams & params)
                 params.proof->create_binary_variable(q, [&] (int v) { return graph.vertex_name(v); });
 
             params.proof->create_objective(graph.size(), params.decide);
-#if defined(VECTOR) || defined(MAX)
+#ifdef VECTOR
             params.proof->create_non_edge_constraint_vector(graph.size());
 #endif
             for (int p = 0 ; p < graph.size() ; ++p)
