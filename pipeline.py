@@ -6,8 +6,7 @@ small_tests = ["brock200_2.clq","brock200_3.clq","brock200_4.clq"]
 laptop_tests = [
     "brock200_1.clq","brock200_2.clq","brock200_3.clq","brock200_4.clq",
     "C125.9.clq", 
-    "c-fat200-1.clq", "c-fat200-2.clq", "c-fat200-5.clq",
-    "c-fat500-1.clq","c-fat500-2.clq","c-fat500-5.clq","c-fat500-10.clq",
+    "c-fat200-1.clq", "c-fat200-2.clq", "c-fat200-5.clq", "c-fat500-1.clq","c-fat500-2.clq","c-fat500-5.clq","c-fat500-10.clq",
     "gen200_p0.9_55.clq",
     "hamming6-2.clq", "hamming6-4.clq", "hamming8-2.clq", "hamming8-4.clq", "hamming10-2.clq",
     "johnson8-2-4.clq", "johnson8-4-4.clq", "johnson16-2-4.clq",
@@ -15,10 +14,8 @@ laptop_tests = [
     "MANN_a9.clq",
     "p_hat300-1.clq", "p_hat300-2.clq",
     "p_hat500-1.clq", "p_hat500-2.clq",
-    "p_hat700-1.clq",
-    "p_hat1000-1.clq",
-    "san200_0.7_1.clq", "san200_0.7_2.clq",
-    "san200_0.9_1.clq",
+    "p_hat700-1.clq", "p_hat1000-1.clq",
+    "san200_0.7_1.clq", "san200_0.7_2.clq", "san200_0.9_1.clq",
     "san400_0.5_1.clq", "san400_0.7_1.clq",
     "sanr200_0.7.clq", 
     "sanr400_0.5.clq" 
@@ -54,7 +51,7 @@ def run_instances(hardware, run_type):
     temp_cwd = os.getcwd()
     for i in range (5):
         os.chdir(temp_cwd + "/results/results_" + str(i))
-        # Manually set the name of the results file based on hardware
+        
         output_filename = hardware + "_tests_" + run_type + ".csv"
         #create file and populate first row
         with open(output_filename, "w") as f:
@@ -62,11 +59,13 @@ def run_instances(hardware, run_type):
 
         os.chdir(temp_cwd)
         output_filename = "results/results_" + str(i) + "/" + output_filename
+        
+        print("Starting run " + str(i+1) + " on code type: " + run_type)
         for filename in laptop_tests: # CHANGE
-            output_string = "Running test instance: " + filename + " on code version " + run_type
-            print(output_string)
+            print("#",end='') #outputs a hash character per instance run
             proofname = "proof_outputs/" + filename[:-4] + "_proof"
             os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
+        print("")
 
 def main():
     
@@ -104,6 +103,12 @@ def main():
     os.chdir(cwd)
     # for each test instance record runtime
     run_instances(hardware, "Colour_Class")
+
+    # compile code for 5th test - vector vs map
+
+    # compile code for 6th test - no comments included
+
+    # compile code for 7th test - max improvement attempt (newline w/ colour class fix, vector, no comments)
 
 if __name__ == "__main__":
     main()
