@@ -104,21 +104,21 @@ def main():
     # # for each test instance record runtime
     # run_instances(hardware, "Colour_Class")
 
-    # compile code for 5th test - vector vs map
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=vector')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "Vector")
+    # # compile code for 5th test - vector vs map
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=vector')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "Vector")
 
-    # compile code for 6th test - no comments included
-    os.chdir(cwd + '/build')
-    os.system('cmake .. -DCODETYPE:STRING=comment')
-    os.system('make')
-    os.chdir(cwd)
-    # for each test instance record runtime
-    run_instances(hardware, "Comment")
+    # # compile code for 6th test - no comments included
+    # os.chdir(cwd + '/build')
+    # os.system('cmake .. -DCODETYPE:STRING=comment')
+    # os.system('make')
+    # os.chdir(cwd)
+    # # for each test instance record runtime
+    # run_instances(hardware, "Comment")
 
     # compile code for 7th test - max improvement attempt (newline w/ colour class fix, no comments)
     os.chdir(cwd + '/build')

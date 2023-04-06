@@ -1081,7 +1081,7 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
                     });
         }
         else
-            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }];
+            do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }]; });
 
 #ifdef MAX
         if (cc.size() != 1) {
@@ -1289,7 +1289,8 @@ Proof::Proof(const string & opb_file, const string & log_file, bool f, bool b, b
     _imp->bz2 = b;
     _imp->super_extra_verbose = s;
     _imp->proof_file = fopen(log_file.c_str(),"w");
-    /* auto stream = fmt::output_file(log_file); */
+    auto stream = fmt::output_file(log_file);
+    fmt::print("{}",typeid(stream).name());
     /* _imp->proof_stream = fmt::output_file(log_file); */
 }
 
