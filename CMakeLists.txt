@@ -50,6 +50,7 @@ set(main_files src/clique.cc src/clique.hh
           src/configuration.cc src/configuration.hh
           src/glasgow_clique_solver.cc 
           src/graph_traits.cc src/graph_traits.hh
+          src/do_not_print.cc src/do_not_print.hh
           src/proof.cc src/proof.hh src/proof-fwd.hh
           src/restarts.cc src/restarts.hh
           src/svo_bitset.cc src/svo_bitset.hh

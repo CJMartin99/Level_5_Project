@@ -1,6 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include "proof.hh"
+#include "do_not_print.hh"
 
 #include <algorithm>
 #include <iterator>
@@ -1854,11 +1855,6 @@ Proof::~Proof() = default;
 
 auto Proof::operator= (Proof &&) -> Proof & = default;
 
-auto Proof::no_print(string content) -> void
-{
-	static auto  __attribute__((used)) no_print = content;
-}
-
 auto Proof::create_cp_variable(int pattern_vertex, int target_size,
         const function<auto (int) -> string> & pattern_name,
         const function<auto (int) -> string> & target_name) -> void
@@ -1920,7 +1916,7 @@ auto Proof::create_adjacency_constraint(int p, int q, int t, const vector<int> &
 
 auto Proof::finalise_model() -> void
 {
-    unique_ptr<ostream> f = /* fmt::output_file(_imp->log_filename) */ (_imp->bz2 ? make_compressed_ostream(_imp->opb_filename + ".bz2") : make_unique<ofstream>(_imp->opb_filename));
+    unique_ptr<ostream> f = (_imp->bz2 ? make_compressed_ostream(_imp->opb_filename + ".bz2") : make_unique<ofstream>(_imp->opb_filename));
 
     *f << "* #variable= " << (_imp->variable_mappings.size() + _imp->binary_variable_mappings.size()
             + _imp->connected_variable_mappings.size() + _imp->connected_variable_mappings_aux.size())
@@ -1933,9 +1929,9 @@ auto Proof::finalise_model() -> void
     if (! *f)
         throw ProofError{ "Error writing opb file to '" + _imp->opb_filename + "'" };
 
-    no_print(fmt::format("pseudo-Boolean proof version 1.0\n"));
+    do_not_print(fmt::format("pseudo-Boolean proof version 1.0\n"));
 
-    no_print(fmt::format("f {} 0\n",_imp->nb_constraints));
+    do_not_print(fmt::format("f {} 0\n",_imp->nb_constraints));
     _imp->proof_line += _imp->nb_constraints;
 
     /* if (! *_imp->proof_stream)
@@ -1944,68 +1940,68 @@ auto Proof::finalise_model() -> void
 
 auto Proof::finish_unsat_proof() -> void
 {
-    no_print(fmt::format("* asserting that we've proved unsat\n"));
-    no_print(fmt::format("u >= 1 ;\n"));
+    do_not_print(fmt::format("* asserting that we've proved unsat\n"));
+    do_not_print(fmt::format("u >= 1 ;\n"));
     ++_imp->proof_line;
-    no_print(fmt::format("c {} 0\n", _imp->proof_line));
+    do_not_print(fmt::format("c {} 0\n", _imp->proof_line));
 }
 
 auto Proof::emit_hall_set_or_violator(const vector<NamedVertex> & lhs, const vector<NamedVertex> & rhs) -> void
 {
-    no_print(fmt::format("* hall set or violator {"));
+    do_not_print(fmt::format("* hall set or violator {"));
     for (auto & l : lhs)
-        no_print(fmt::format(" {}", l.second));
-    no_print(fmt::format(" } / {"));
+        do_not_print(fmt::format(" {}", l.second));
+    do_not_print(fmt::format(" } / {"));
     for (auto & r : rhs)
-        no_print(fmt::format(" {}", r.second));
-    no_print(fmt::format(" }\n"));
-    no_print(fmt::format("p"));
+        do_not_print(fmt::format(" {}", r.second));
+    do_not_print(fmt::format(" }\n"));
+    do_not_print(fmt::format("p"));
     bool first = true;
     for (auto & l : lhs) {
         if (first) {
             first = false;
-            no_print(fmt::format(" {}\n", _imp->at_least_one_value_constraints[l.first]));
+            do_not_print(fmt::format(" {}\n", _imp->at_least_one_value_constraints[l.first]));
         }
         else
-            no_print(fmt::format(" {} +\n", _imp->at_least_one_value_constraints[l.first]));
+            do_not_print(fmt::format(" {} +\n", _imp->at_least_one_value_constraints[l.first]));
     }
     for (auto & r : rhs)
-        no_print(fmt::format(" {} +", _imp->injectivity_constraints[r.first]));
-    no_print(fmt::format(" 0\n"));
+        do_not_print(fmt::format(" {} +", _imp->injectivity_constraints[r.first]));
+    do_not_print(fmt::format(" 0\n"));
     ++_imp->proof_line;
 }
 
 auto Proof::root_propagation_failed() -> void
 {
-    no_print(fmt::format("* root node propagation failed\n"));
+    do_not_print(fmt::format("* root node propagation failed\n"));
 }
 
 auto Proof::guessing(int depth, const NamedVertex & branch_v, const NamedVertex & val) -> void
 {
-    no_print(fmt::format("* [{}] guessing {}={}\n", depth, branch_v.second, val.second));
+    do_not_print(fmt::format("* [{}] guessing {}={}\n", depth, branch_v.second, val.second));
 }
 
 auto Proof::propagation_failure(const vector<pair<int, int> > & decisions, const NamedVertex & branch_v, const NamedVertex & val) -> void
 {
-    no_print(fmt::format("* [{}] propagation failure on {}={}\n", decisions.size(), branch_v.second, val.second));
-    no_print(fmt::format("u "));
+    do_not_print(fmt::format("* [{}] propagation failure on {}={}\n", decisions.size(), branch_v.second, val.second));
+    do_not_print(fmt::format("u "));
     for (auto & [ var, val ] : decisions)
-        no_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
-    no_print(fmt::format(" >= 1 ;\n"));
+        do_not_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
+    do_not_print(fmt::format(" >= 1 ;\n"));
     ++_imp->proof_line;
 }
 
 auto Proof::incorrect_guess(const vector<pair<int, int> > & decisions, bool failure) -> void
 {
     if (failure)
-        no_print(fmt::format("* [{}] incorrect guess\n", decisions.size()));
+        do_not_print(fmt::format("* [{}] incorrect guess\n", decisions.size()));
     else
-        no_print(fmt::format("* [{}] backtracking\n", decisions.size()));
+        do_not_print(fmt::format("* [{}] backtracking\n", decisions.size()));
 
-    no_print(fmt::format("u"));
+    do_not_print(fmt::format("u"));
     for (auto & [ var, val ] : decisions)
-        no_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
-    no_print(fmt::format(" >= 1 ;\n"));
+        do_not_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
+    do_not_print(fmt::format(" >= 1 ;\n"));
     ++_imp->proof_line;
 }
 
@@ -2015,82 +2011,82 @@ auto Proof::out_of_guesses(const vector<pair<int, int> > &) -> void
 
 auto Proof::unit_propagating(const NamedVertex & var, const NamedVertex & val) -> void
 {
-    no_print(fmt::format("* unit propagating {}={}\n", var.second, val.second));
+    do_not_print(fmt::format("* unit propagating {}={}\n", var.second, val.second));
 }
 
 auto Proof::start_level(int l) -> void
 {
-    no_print(fmt::format("# {}\n", l));
+    do_not_print(fmt::format("# {}\n", l));
     _imp->largest_level_set = max(_imp->largest_level_set, l);
 }
 
 auto Proof::back_up_to_level(int l) -> void
 {
-    no_print(fmt::format("# {}\n", l));
+    do_not_print(fmt::format("# {}\n", l));
     _imp->largest_level_set = max(_imp->largest_level_set, l);
 }
 
 auto Proof::forget_level(int l) -> void
 {
     if (_imp->largest_level_set >= l)
-        no_print(fmt::format("w {}\n", l));
+        do_not_print(fmt::format("w {}\n", l));
 }
 
 auto Proof::back_up_to_top() -> void
 {
-    no_print(fmt::format("# {}\n", 0));
+    do_not_print(fmt::format("# {}\n", 0));
 }
 
 auto Proof::post_restart_nogood(const vector<pair<int, int> > & decisions) -> void
 {
-    no_print(fmt::format("* [{}] restart nogood\n", decisions.size()));
-    no_print(fmt::format("u"));
+    do_not_print(fmt::format("* [{}] restart nogood\n", decisions.size()));
+    do_not_print(fmt::format("u"));
     for (auto & [ var, val ] : decisions)
-        no_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
-    no_print(fmt::format(" >= 1 ;\n"));
+        do_not_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[pair{ var, val }]));
+    do_not_print(fmt::format(" >= 1 ;\n"));
     ++_imp->proof_line;
 }
 
 auto Proof::post_solution(const vector<pair<NamedVertex, NamedVertex> > & decisions) -> void
 {
-    no_print(fmt::format("* found solution"));
+    do_not_print(fmt::format("* found solution"));
     for (auto & [ var, val ] : decisions)
-        no_print(fmt::format(" {}={}", var.second, val.second));
-    no_print(fmt::format("\n"));
+        do_not_print(fmt::format(" {}={}", var.second, val.second));
+    do_not_print(fmt::format("\n"));
 
-    no_print(fmt::format("v"));
+    do_not_print(fmt::format("v"));
     for (auto & [ var, val ] : decisions)
-        no_print(fmt::format(" x{}", _imp->variable_mappings[pair{ var.first, val.first }]));
-    no_print(fmt::format("\n"));
+        do_not_print(fmt::format(" x{}", _imp->variable_mappings[pair{ var.first, val.first }]));
+    do_not_print(fmt::format("\n"));
     ++_imp->proof_line;
 }
 
 auto Proof::post_solution(const vector<int> & solution) -> void
 {
-    no_print(fmt::format("v"));
+    do_not_print(fmt::format("v"));
     for (auto & v : solution)
-        no_print(fmt::format(" x", _imp->binary_variable_mappings[v]));
-    no_print(fmt::format("\n"));
+        do_not_print(fmt::format(" x", _imp->binary_variable_mappings[v]));
+    do_not_print(fmt::format("\n"));
     ++_imp->proof_line;
 }
 
 auto Proof::new_incumbent(const vector<pair<int, bool> > & solution) -> void
 {
-    no_print(fmt::format("o"));
+    do_not_print(fmt::format("o"));
     for (auto & [ v, t ] : solution)
-        no_print(fmt::format(" {}x{}", (t ? "" : "~"), _imp->binary_variable_mappings[v]));
+        do_not_print(fmt::format(" {}x{}", (t ? "" : "~"), _imp->binary_variable_mappings[v]));
     for (auto & [ v, w ] : _imp->zero_in_proof_objectives)
-        no_print(fmt::format(" ~x{}", _imp->variable_mappings[pair{ v, w }]));
-    no_print(fmt::format("\n"));
+        do_not_print(fmt::format(" ~x{}", _imp->variable_mappings[pair{ v, w }]));
+    do_not_print(fmt::format("\n"));
     _imp->objective_line = ++_imp->proof_line;
 }
 
 auto Proof::new_incumbent(const vector<tuple<NamedVertex, NamedVertex, bool> > & decisions) -> void
 {
-    no_print(fmt::format("o"));
+    do_not_print(fmt::format("o"));
     for (auto & [ var, val, t ] : decisions)
-        no_print(fmt::format(" {}x{}", (t ? "" : "~"), _imp->variable_mappings[pair{ var.first, val.first }]));
-    no_print(fmt::format("\n"));
+        do_not_print(fmt::format(" {}x{}", (t ? "" : "~"), _imp->variable_mappings[pair{ var.first, val.first }]));
+    do_not_print(fmt::format("\n"));
     _imp->objective_line = ++_imp->proof_line;
 }
 
@@ -2132,21 +2128,21 @@ auto Proof::create_non_edge_constraint(int p, int q) -> void
 auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
 {
     if (! _imp->doing_hom_colour_proof) {
-        no_print(fmt::format("u"));
+        do_not_print(fmt::format("u"));
         for (auto & w : v)
-            no_print(fmt::format(" 1 ~x{}", _imp->binary_variable_mappings[w]));
-        no_print(fmt::format(" >= 1 ;\n"));
+            do_not_print(fmt::format(" 1 ~x{}", _imp->binary_variable_mappings[w]));
+        do_not_print(fmt::format(" >= 1 ;\n"));
         ++_imp->proof_line;
     }
     else {
-        no_print(fmt::format("* backtrack shenanigans, depth {}\n", v.size()));
+        do_not_print(fmt::format("* backtrack shenanigans, depth {}\n", v.size()));
         function<auto (unsigned, const vector<pair<int, int> > &) -> void> f;
         f = [&] (unsigned d, const vector<pair<int, int> > & trail) -> void {
             if (d == v.size()) {
-                no_print(fmt::format("u 1 ~x{}", _imp->variable_mappings[pair{ _imp->hom_colour_proof_p.first, _imp->hom_colour_proof_t.first }]));
+                do_not_print(fmt::format("u 1 ~x{}", _imp->variable_mappings[pair{ _imp->hom_colour_proof_p.first, _imp->hom_colour_proof_t.first }]));
                 for (auto & t : trail)
-                    no_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[t]));
-                no_print(fmt::format(" >= 1 ;\n"));
+                    do_not_print(fmt::format(" 1 ~x{}", _imp->variable_mappings[t]));
+                do_not_print(fmt::format(" >= 1 ;\n"));
                 ++_imp->proof_line;
             }
             else {
@@ -2163,28 +2159,28 @@ auto Proof::backtrack_from_binary_variables(const vector<int> & v) -> void
 
 auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
 {
-    no_print(fmt::format("* bound, ccs"));
+    do_not_print(fmt::format("* bound, ccs"));
     for (auto & cc : ccs) {
-        no_print(fmt::format(" ["));
+        do_not_print(fmt::format(" ["));
         for (auto & c : cc)
-            no_print(fmt::format(" {}", c));
-        no_print(fmt::format(" ]"));
+            do_not_print(fmt::format(" {}", c));
+        do_not_print(fmt::format(" ]"));
     }
-    no_print(fmt::format("\n"));
+    do_not_print(fmt::format("\n"));
 
     vector<long> to_sum;
     auto do_one_cc = [&] (const auto & cc, const auto & non_edge_constraint) {
         if (cc.size() > 2) {
-            no_print(fmt::format("p {}", non_edge_constraint(cc[0], cc[1])));
+            do_not_print(fmt::format("p {}", non_edge_constraint(cc[0], cc[1])));
 
             for (unsigned i = 2 ; i < cc.size() ; ++i) {
-                no_print(fmt::format(" {} *", i));
+                do_not_print(fmt::format(" {} *", i));
                 for (unsigned j = 0 ; j < i ; ++j)
-                    no_print(fmt::format(" {} +", non_edge_constraint(cc[i], cc[j])));
-                no_print(fmt::format(" {} d", (i + 1)));
+                    do_not_print(fmt::format(" {} +", non_edge_constraint(cc[i], cc[j])));
+                do_not_print(fmt::format(" {} d", (i + 1)));
             }
 
-            no_print(fmt::format("\n"));
+            do_not_print(fmt::format("\n"));
             to_sum.push_back(++_imp->proof_line);
         }
         else if (cc.size() == 2) {
@@ -2199,10 +2195,10 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
                 for (auto & v : _imp->p_clique)
                     bigger_cc.push_back(pair{ v, _imp->t_clique_neighbourhood.find(c)->second });
 
-            no_print(fmt::format("* colour class ["));
+            do_not_print(fmt::format("* colour class ["));
             for (auto & c : bigger_cc)
-                no_print(fmt::format(" {}/{}", c.first.second, c.second.second));
-            no_print(fmt::format(" ]\n"));
+                do_not_print(fmt::format(" {}/{}", c.first.second, c.second.second));
+            do_not_print(fmt::format(" ]\n"));
 
             do_one_cc(bigger_cc, [&] (const pair<NamedVertex, NamedVertex> & a, const pair<NamedVertex, NamedVertex> & b) -> long {
                     return _imp->clique_for_hom_non_edge_constraints[pair{ a, b }];
@@ -2211,18 +2207,18 @@ auto Proof::colour_bound(const vector<vector<int> > & ccs) -> void
         else
             do_one_cc(cc, [&] (int a, int b) -> long { return _imp->non_edge_constraints[pair{ a, b }]; });
 
-        no_print(fmt::format("p {}", _imp->objective_line));
+        do_not_print(fmt::format("p {}", _imp->objective_line));
         for (auto & t : to_sum)
-            no_print(fmt::format(" {} +", t));
-        no_print(fmt::format("\n"));
+            do_not_print(fmt::format(" {} +", t));
+        do_not_print(fmt::format("\n"));
         ++_imp->proof_line;
     }
 }
 
 auto Proof::prepare_hom_clique_proof(const NamedVertex & p, const NamedVertex & t, unsigned size) -> void
 {
-    no_print(fmt::format("* clique of size {} around neighbourhood of {} but not {}\n", size, p.second, t.second));
-    no_print(fmt::format("# 1\n"));
+    do_not_print(fmt::format("* clique of size {} around neighbourhood of {} but not {}\n", size, p.second, t.second));
+    do_not_print(fmt::format("# 1\n"));
     _imp->doing_hom_colour_proof = true;
     _imp->hom_colour_proof_p = p;
     _imp->hom_colour_proof_t = t;
@@ -2233,47 +2229,47 @@ auto Proof::start_hom_clique_proof(const NamedVertex & p, vector<NamedVertex> &&
     _imp->p_clique = move(p_clique);
     _imp->t_clique_neighbourhood = move(t_clique_neighbourhood);
 
-    no_print(fmt::format("* hom clique objective\n"));
+    do_not_print(fmt::format("* hom clique objective\n"));
     vector<long> to_sum;
     for (auto & q : _imp->p_clique) {
-        no_print(fmt::format("u 1 ~x{}", _imp->variable_mappings[pair{ p.first, t.first }]));
+        do_not_print(fmt::format("u 1 ~x{}", _imp->variable_mappings[pair{ p.first, t.first }]));
         for (auto & u : _imp->t_clique_neighbourhood)
-            no_print(fmt::format(" 1 x{}", _imp->variable_mappings[pair{ q.first, u.second.first }]));
-        no_print(fmt::format(" >= 1 ;\n"));
+            do_not_print(fmt::format(" 1 x{}", _imp->variable_mappings[pair{ q.first, u.second.first }]));
+        do_not_print(fmt::format(" >= 1 ;\n"));
         to_sum.push_back(++_imp->proof_line);
     }
 
-    no_print(fmt::format("p"));
+    do_not_print(fmt::format("p"));
     bool first = true;
     for (auto & t : to_sum) {
-        no_print(fmt::format(" {}", t));
+        do_not_print(fmt::format(" {}", t));
         if (! first)
-            no_print(fmt::format(" +"));
+            do_not_print(fmt::format(" +"));
         first = false;
     }
-    no_print(fmt::format("\n"));
+    do_not_print(fmt::format("\n"));
     _imp->objective_line = ++_imp->proof_line;
 
-    no_print(fmt::format("* hom clique non edges for injectivity\n"));
+    do_not_print(fmt::format("* hom clique non edges for injectivity\n"));
 
     for (auto & p : _imp->p_clique)
         for (auto & q : _imp->p_clique)
             if (p != q) {
                 for (auto & [ _, t ] : _imp->t_clique_neighbourhood) {
-                    no_print(fmt::format("u 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, t.first }]));
+                    do_not_print(fmt::format("u 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, t.first }]));
                     ++_imp->proof_line;
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ q, t } }, _imp->proof_line);
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ q, t }, pair{ p, t } }, _imp->proof_line);
                 }
             }
 
-    no_print(fmt::format("* hom clique non edges for variables\n"));
+    do_not_print(fmt::format("* hom clique non edges for variables\n"));
 
     for (auto & p : _imp->p_clique)
         for (auto & [ _, t ] : _imp->t_clique_neighbourhood) {
             for (auto & [ _, u ] : _imp->t_clique_neighbourhood) {
                 if (t != u) {
-                    no_print(fmt::format("u 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ p.first, u.first }]));
+                    do_not_print(fmt::format("u 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ p.first, u.first }]));
                     ++_imp->proof_line;
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ p, u } }, _imp->proof_line);
                     _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, u }, pair{ p, t } }, _imp->proof_line);
@@ -2284,10 +2280,10 @@ auto Proof::start_hom_clique_proof(const NamedVertex & p, vector<NamedVertex> &&
 
 auto Proof::finish_hom_clique_proof(const NamedVertex & p, const NamedVertex & t, unsigned size) -> void
 {
-    no_print(fmt::format("* end clique of size {} around neighbourhood of {} but not {}\n", size, p.second, t.second));
-    no_print(fmt::format("# 0\n"));
-    no_print(fmt::format("u 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }]));
-    no_print(fmt::format("w 1\n"));
+    do_not_print(fmt::format("* end clique of size {} around neighbourhood of {} but not {}\n", size, p.second, t.second));
+    do_not_print(fmt::format("# 0\n"));
+    do_not_print(fmt::format("u 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ p.first, t.first }]));
+    do_not_print(fmt::format("w 1\n"));
     ++_imp->proof_line;
     _imp->doing_hom_colour_proof = false;
     _imp->clique_for_hom_non_edge_constraints.clear();
@@ -2300,11 +2296,11 @@ auto Proof::add_hom_clique_non_edge(
         const NamedVertex & t,
         const NamedVertex & u) -> void
 {
-    no_print(fmt::format("* hom clique non edges for {} {}\n", t.second, u.second));
+    do_not_print(fmt::format("* hom clique non edges for {} {}\n", t.second, u.second));
     for (auto & p : p_clique) {
         for (auto & q : p_clique) {
             if (p != q) {
-                no_print(fmt::format("u 1 ~x{} 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ pp.first, tt.first }], _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, u.first }]));
+                do_not_print(fmt::format("u 1 ~x{} 1 ~x{} 1 ~x{} >= 1 ;\n", _imp->variable_mappings[pair{ pp.first, tt.first }], _imp->variable_mappings[pair{ p.first, t.first }], _imp->variable_mappings[pair{ q.first, u.first }]));
                 ++_imp->proof_line;
                 _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ p, t }, pair{ q, u } }, _imp->proof_line);
                 _imp->clique_for_hom_non_edge_constraints.emplace(pair{ pair{ q, u }, pair{ p, t } }, _imp->proof_line);
@@ -2315,10 +2311,10 @@ auto Proof::add_hom_clique_non_edge(
 
 auto Proof::not_connected_in_underlying_graph(const std::vector<int> & x, int y) -> void
 {
-    no_print(fmt::format("u 1 ~x{}", _imp->binary_variable_mappings[y]));
+    do_not_print(fmt::format("u 1 ~x{}", _imp->binary_variable_mappings[y]));
     for (auto & v : x)
-        no_print(fmt::format(" 1 ~x{}", _imp->binary_variable_mappings[v]));
-    no_print(fmt::format(" >= 1 ;\n"));
+        do_not_print(fmt::format(" 1 ~x{}", _imp->binary_variable_mappings[v]));
+    do_not_print(fmt::format(" >= 1 ;\n"));
     ++_imp->proof_line;
 }
 
@@ -2345,17 +2341,17 @@ auto Proof::super_extra_verbose() const -> bool
 
 auto Proof::show_domains(const string & s, const std::vector<std::pair<NamedVertex, std::vector<NamedVertex> > > & domains) -> void
 {
-    no_print(fmt::format("* {} domains follow\n", s));
+    do_not_print(fmt::format("* {} domains follow\n", s));
     for (auto & [ p, ts ] : domains) {
-        no_print(fmt::format("*    {} size {} = {", p.second, ts.size()));
+        do_not_print(fmt::format("*    {} size {} = {", p.second, ts.size()));
         for (auto & t : ts)
-            no_print(fmt::format(" {}", t.second));
-        no_print(fmt::format(" }\n"));
+            do_not_print(fmt::format(" {}", t.second));
+        do_not_print(fmt::format(" }\n"));
     }
 }
 
 auto Proof::propagated(const NamedVertex & p, const NamedVertex & t, int g, int n_values, const NamedVertex & q) -> void
 {
-    no_print(fmt::format("* adjacency propagation from {} -> {} in graph pairs {} deleted {} values from {}\n", p.second, t.second, g, n_values, q.second));
+    do_not_print(fmt::format("* adjacency propagation from {} -> {} in graph pairs {} deleted {} values from {}\n", p.second, t.second, g, n_values, q.second));
 }
 #endif
