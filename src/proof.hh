@@ -79,6 +79,10 @@ class Proof
         auto back_up_to_top() -> void;
         auto post_restart_nogood(const std::vector<std::pair<int, int> > & decisions) -> void;
 
+#ifdef NOPRINT
+        auto no_print(std::string content) -> void; 
+#endif
+
         // cliques
         auto create_binary_variable(int vertex,
                 const std::function<auto (int) -> std::string> & name) -> void;
