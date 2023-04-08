@@ -21,7 +21,7 @@ laptop_tests = [
     "sanr400_0.5.clq" 
 ]
 
-test_cases = [
+cluster_tests = [
     "brock200_1.clq","brock200_2.clq","brock200_3.clq","brock200_4.clq",
     "brock400_1.clq","brock400_2.clq","brock400_3.clq","brock400_4.clq",
     "brock800_1.clq","brock800_2.clq","brock800_3.clq","brock800_4.clq",
@@ -61,7 +61,7 @@ def run_instances(hardware, run_type):
         output_filename = "results/results_" + str(i) + "/" + output_filename
         
         print("Starting run " + str(i+1) + " on code type: " + run_type)
-        for filename in laptop_tests: # CHANGE
+        for filename in cluster_tests: # CHANGE
             print("#",end='',flush=True) #outputs a hash character per instance run
             proofname = "proof_outputs/" + filename[:-4] + "_proof"
             os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
@@ -72,53 +72,53 @@ def main():
     hardware = sys.argv[1]
     cwd = os.getcwd()
 
-    # # compile code for 1st test - unaltered code
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=original')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "Original")
+    # compile code for 1st test - unaltered code
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=original')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Original")
 
-    # # compile code for 2nd test - /n code
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=newline')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "Newline")
+    # compile code for 2nd test - /n code
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=newline')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Newline")
 
-    # # compile code for 3rd test - fmt lib
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=fmt')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "FMT")
+    # compile code for 3rd test - fmt lib
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=fmt')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "FMT")
 
-    # # compile code for 4th test - colour classes fix
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=colour')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "Colour_Class")
+    # compile code for 4th test - colour classes fix
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=colour')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Colour_Class")
 
-    # # compile code for 5th test - vector vs map
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=vector')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "Vector")
+    # compile code for 5th test - vector vs map
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=vector')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Vector")
 
-    # # compile code for 6th test - no comments included
-    # os.chdir(cwd + '/build')
-    # os.system('cmake .. -DCODETYPE:STRING=comment')
-    # os.system('make')
-    # os.chdir(cwd)
-    # # for each test instance record runtime
-    # run_instances(hardware, "Comment")
+    # compile code for 6th test - no comments included
+    os.chdir(cwd + '/build')
+    os.system('cmake .. -DCODETYPE:STRING=comment')
+    os.system('make')
+    os.chdir(cwd)
+    # for each test instance record runtime
+    run_instances(hardware, "Comment")
 
     # compile code for 7th test - max improvement attempt (newline w/ colour class fix, no comments)
     os.chdir(cwd + '/build')
