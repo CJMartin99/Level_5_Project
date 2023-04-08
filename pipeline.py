@@ -61,7 +61,7 @@ def run_instances(hardware, run_type):
         output_filename = "results/results_" + str(i) + "/" + output_filename
         
         print("Starting run " + str(i+1) + " on code type: " + run_type)
-        for filename in cluster_tests: # CHANGE
+        for filename in laptop_tests: # CHANGE
             print("#",end='',flush=True) #outputs a hash character per instance run
             proofname = "proof_outputs/" + filename[:-4] + "_proof"
             os.system('./glasgow_clique_solver --prove ' + proofname + ' test-instances/DIMACS_all_ascii/' + filename + ' >> ' + output_filename)
