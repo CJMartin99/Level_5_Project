@@ -11,16 +11,36 @@ def text_strip(input_text):
         stripped_text = input_text
     return stripped_text
 
+def catch_zero_runtimes(value):
+    if value == 0: 
+        return 0.1
+    else:
+        return value
+
 def calculate_avg_runtime(df,code_type):
+    df['runtime'] = df['runtime'].apply(catch_zero_runtimes)
+    df['runtime1'] = df['runtime1'].apply(catch_zero_runtimes)
+    df['runtime2'] = df['runtime2'].apply(catch_zero_runtimes)
+    df['runtime3'] = df['runtime3'].apply(catch_zero_runtimes)
+    df['runtime4'] = df['runtime4'].apply(catch_zero_runtimes)
+
     df['avg_runtime'] = df[['runtime','runtime1','runtime2','runtime3','runtime4']].mean(axis=1)
+    df['std_dev'] = df[['runtime','runtime1','runtime2','runtime3','runtime4']].std(axis=1)
+    df['rsd'] = ( 100 * (df['std_dev'] / abs(df['avg_runtime'])) )
+
     df['code_type'] = code_type
+
+def format_decimals(input_val):
+    return round(input_val, 2)
+    
+def strip_file_ext(input_text):
+    return input_text[:-4]
 
 def create_comparison_graph(df,hardware):
     cwd = os.getcwd()
 
     sb.set_theme(style="whitegrid")
-    #ax = sb.boxplot(x="code_type",y="avg_runtime",data=df_laptop_original_newline)
-    ax = sb.swarmplot(x="code_type",y="runtimes",data=df,hue="code_type",size=2.5,legend=False)#,jitter=0.4)
+    ax = sb.swarmplot(x="code_type",y="runtimes",data=df,hue="code_type",size=1,legend=False)#,jitter=0.4)
     ax.set_title("Test Instances Runtimes (" + hardware + ")")
     ax.set_xlabel("Code Test Cases")
     ax.set_ylabel("Runtime (milliseconds)")
@@ -29,7 +49,7 @@ def create_comparison_graph(df,hardware):
     plt.xticks(rotation=0)
 
     os.chdir(cwd+"/graphs")
-    plt.savefig(hardware + "_Runtimes.png")
+    plt.savefig(hardware + "_Runtimes.png", bbox_inches="tight")
     plt.clf()
     os.chdir(cwd)
 
@@ -43,11 +63,56 @@ def create_speed_up_graph(df,hardware):
     ax.set_ylabel("Speed-Up")
     plt.xticks(rotation=270)
     plt.ylim(ymin=0)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1, fancybox=True, shadow=True)
 
     os.chdir(cwd+"/graphs")
-    plt.savefig(hardware + "_speedups_vs_original.png")
+    plt.savefig(hardware + "_speedups_vs_original.png", bbox_inches="tight")
     plt.clf()
     os.chdir(cwd)
+
+def create_table_entry(df,hardware):
+    df["file"] = df["file"].apply(strip_file_ext)
+    df["newline_speedup"] = df["newline_speedup"].apply(format_decimals)
+    df["fmt_speedup"] = df["fmt_speedup"].apply(format_decimals)
+    df["cc_speedup"] = df["cc_speedup"].apply(format_decimals)
+    df["vector_speedup"] = df["vector_speedup"].apply(format_decimals)
+    df["comment_speedup"] = df["comment_speedup"].apply(format_decimals)
+    df["max_speedup"] = df["max_speedup"].apply(format_decimals)
+
+    filename = hardware + "_table_entry.csv"
+    df.to_csv(filename,sep='&',mode='w')
+
+def print_speed_up_stats(df, hardware):
+    print("speed up stats for " + hardware)
+    newline_avg = round(df['newline_speedup'].mean(), 2)
+    newline_stddev = round(df['newline_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("newline: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
+
+    newline_avg = round(df['fmt_speedup'].mean(), 2)
+    newline_stddev = round(df['fmt_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("fmt: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
+
+    newline_avg = round(df['cc_speedup'].mean(), 2)
+    newline_stddev = round(df['cc_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("cc: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
+
+    newline_avg = round(df['vector_speedup'].mean(), 2)
+    newline_stddev = round(df['vector_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("vector: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
+
+    newline_avg = round(df['comment_speedup'].mean(), 2)
+    newline_stddev = round(df['comment_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("comment: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
+
+    newline_avg = round(df['max_speedup'].mean(), 2)
+    newline_stddev = round(df['max_speedup'].std(), 2)
+    newline_rsd = ( 100 * (newline_stddev / newline_avg) )
+    print("max: mean = " + str(newline_avg) + ", std_dev = " + str(newline_stddev) + ", RSD = " + str(newline_rsd))
 
 def main():
     cwd = os.getcwd()
@@ -55,43 +120,42 @@ def main():
     os.chdir(cwd + "/results/results_0")
     df_laptop_original = pd.read_csv('Laptop_tests_Original.csv')
     df_cluster_original = pd.read_csv('Cluster_tests_Original.csv')
-    #df_epyc_original = pd.read_csv('Epyc_tests_Original.csv')
+    df_epyc_original = pd.read_csv('Epyc_tests_Original.csv')
 
     df_laptop_newline = pd.read_csv('Laptop_tests_Newline.csv')
     df_cluster_newline = pd.read_csv('Cluster_tests_Newline.csv')
-    #df_epyc_newline = pd.read_csv('Epyc_tests_Newline.csv')
+    df_epyc_newline = pd.read_csv('Epyc_tests_Newline.csv')
 
     df_laptop_fmt = pd.read_csv('Laptop_tests_FMT.csv')
     df_cluster_fmt = pd.read_csv('Cluster_tests_FMT.csv')
-    #df_epyc_fmt = pd.read_csv('Epyc_tests_FMT.csv')
+    df_epyc_fmt = pd.read_csv('Epyc_tests_FMT.csv')
 
     df_laptop_cc = pd.read_csv('Laptop_tests_Colour_Class.csv')
     df_cluster_cc = pd.read_csv('Cluster_tests_Colour_Class.csv')
-    #df_epyc_cc = pd.read_csv('Epyc_tests_Colour_Class.csv')
+    df_epyc_cc = pd.read_csv('Epyc_tests_Colour_Class.csv')
 
     df_laptop_vector = pd.read_csv('Laptop_tests_Vector.csv')
-    #df_cluster_vector = pd.read_csv('Cluster_tests_Vector.csv')
-    #df_epyc_vector = pd.read_csv('Epyc_tests_Vector.csv')
+    df_cluster_vector = pd.read_csv('Cluster_tests_Vector.csv')
+    df_epyc_vector = pd.read_csv('Epyc_tests_Vector.csv')
 
     df_laptop_comment =  pd.read_csv('Laptop_tests_Comment.csv')
-    #df_cluster_comment = pd.read_csv('Cluster_tests_Comment.csv')
-    #df_epyc_comment = pd.read_csv('Epyc_tests_Comment.csv')
+    df_cluster_comment = pd.read_csv('Cluster_tests_Comment.csv')
+    df_epyc_comment = pd.read_csv('Epyc_tests_Comment.csv')
 
     df_laptop_max = pd.read_csv('Laptop_tests_Max.csv')
-    #df_cluster_max = pd.read_csv('Cluster_tests_Max.csv')
-    #df_epyc_max = pd.read_csv('Epyc_tests_Max.csv')
+    df_cluster_max = pd.read_csv('Cluster_tests_Max.csv')
+    df_epyc_max = pd.read_csv('Epyc_tests_Max.csv')
 
     df_file_pairs = [
-        [df_laptop_original,'Laptop_tests_Original.csv'], [df_cluster_original,'Cluster_tests_Original.csv'], # [df_epyc_original,'Epyc_tests_Original.csv'],
-        [df_laptop_newline,'Laptop_tests_Newline.csv'], [df_cluster_newline,'Cluster_tests_Newline.csv'], # [df_epyc_newline,'Epyc_tests_Newline.csv'],
-        [df_laptop_fmt,'Laptop_tests_FMT.csv'], [df_cluster_fmt,'Cluster_tests_FMT.csv'], # [df_epyc_fmt,'Epyc_tests_FMT.csv'],
-        [df_laptop_cc,'Laptop_tests_Colour_Class.csv'], [df_cluster_cc,'Cluster_tests_Colour_Class.csv'], # [df_epyc_cc,'Epyc_tests_Colour_Class.csv'],
-        [df_laptop_vector,'Laptop_tests_Vector.csv'], # [df_cluster_vector,'Cluster_tests_Vector.csv'], # [df_epyc_vector,'Epyc_tests_Vector.csv'],
-        [df_laptop_comment,'Laptop_tests_Comment.csv'], # [df_cluster_comment,'Cluster_tests_Comment.csv'], # [df_epyc_comment,'Epyc_tests_Comment.csv'],
-        [df_laptop_max,'Laptop_tests_Max.csv'], # [df_cluster_max,'Cluster_tests_Max.csv'], # [df_epyc_max,'Epyc_tests_Max.csv']
+        [df_laptop_original,'Laptop_tests_Original.csv'], [df_cluster_original,'Cluster_tests_Original.csv'], [df_epyc_original,'Epyc_tests_Original.csv'],
+        [df_laptop_newline,'Laptop_tests_Newline.csv'], [df_cluster_newline,'Cluster_tests_Newline.csv'], [df_epyc_newline,'Epyc_tests_Newline.csv'],
+        [df_laptop_fmt,'Laptop_tests_FMT.csv'], [df_cluster_fmt,'Cluster_tests_FMT.csv'], [df_epyc_fmt,'Epyc_tests_FMT.csv'],
+        [df_laptop_cc,'Laptop_tests_Colour_Class.csv'], [df_cluster_cc,'Cluster_tests_Colour_Class.csv'], [df_epyc_cc,'Epyc_tests_Colour_Class.csv'],
+        [df_laptop_vector,'Laptop_tests_Vector.csv'], [df_cluster_vector,'Cluster_tests_Vector.csv'], [df_epyc_vector,'Epyc_tests_Vector.csv'],
+        [df_laptop_comment,'Laptop_tests_Comment.csv'], [df_cluster_comment,'Cluster_tests_Comment.csv'], [df_epyc_comment,'Epyc_tests_Comment.csv'],
+        [df_laptop_max,'Laptop_tests_Max.csv'], [df_cluster_max,'Cluster_tests_Max.csv'], [df_epyc_max,'Epyc_tests_Max.csv']
     ]
 
-    # final version may be set to 10
     for df_file_pair in df_file_pairs:
         
         df = df_file_pair[0]
@@ -107,23 +171,26 @@ def main():
     os.chdir(cwd)
 
     # Average the runtimes for each test case on each hardware
-    # code for expanding to 10 runs
-    # ,'runtime5','runtime6','runtime7','runtime8','runtime9'
-    for df in [df_laptop_original,df_cluster_original]:
+    for df in [df_laptop_original,df_cluster_original,df_epyc_original]:
         calculate_avg_runtime(df,"original")
 
-    for df in [df_laptop_newline,df_cluster_newline]:
+    for df in [df_laptop_newline,df_cluster_newline,df_epyc_newline]:
         calculate_avg_runtime(df,"newline")
 
-    for df in [df_laptop_fmt,df_cluster_fmt]:
+    for df in [df_laptop_fmt,df_cluster_fmt,df_epyc_fmt]:
         calculate_avg_runtime(df,"fmt")
 
-    for df in [df_laptop_cc,df_cluster_cc]:
+    for df in [df_laptop_cc,df_cluster_cc,df_epyc_cc]:
         calculate_avg_runtime(df,"colour_class")
 
-    calculate_avg_runtime(df_laptop_vector, "vector")
-    calculate_avg_runtime(df_laptop_comment, "comment")
-    calculate_avg_runtime(df_laptop_max, "max")
+    for df in [df_laptop_vector,df_cluster_vector,df_epyc_vector]:
+        calculate_avg_runtime(df, "vector")
+    
+    for df in [df_laptop_comment,df_cluster_comment,df_epyc_comment]:
+        calculate_avg_runtime(df, "comment")
+    
+    for df in [df_laptop_max,df_cluster_max,df_epyc_max]:
+        calculate_avg_runtime(df, "max")
 
     df_laptop_newline["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_newline['avg_runtime']
     df_laptop_fmt["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_fmt['avg_runtime']
@@ -132,14 +199,32 @@ def main():
     df_laptop_comment["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_comment['avg_runtime']
     df_laptop_max["speed_up"] = df_laptop_original['avg_runtime'] / df_laptop_max['avg_runtime']
 
-    #df_cluster_newline["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_newline['avg_runtime']
-    #df_cluster_fmt["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_fmt['avg_runtime']
-    #df_cluster_cc["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_cc['avg_runtime']
+    df_cluster_newline["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_newline['avg_runtime']
+    df_cluster_fmt["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_fmt['avg_runtime']
+    df_cluster_cc["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_cc['avg_runtime']
+    df_cluster_vector["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_vector['avg_runtime']
+    df_cluster_comment["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_comment['avg_runtime']
+    df_cluster_max["speed_up"] = df_cluster_original['avg_runtime'] / df_cluster_max['avg_runtime']
+
+    df_epyc_newline["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_newline['avg_runtime']
+    df_epyc_fmt["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_fmt['avg_runtime']
+    df_epyc_cc["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_cc['avg_runtime']
+    df_epyc_vector["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_vector['avg_runtime']
+    df_epyc_comment["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_comment['avg_runtime']
+    df_epyc_max["speed_up"] = df_epyc_original['avg_runtime'] / df_epyc_max['avg_runtime']
     
     # create merged dfs for each graph
     df_laptop = pd.concat([df_laptop_original,df_laptop_newline,df_laptop_fmt,df_laptop_cc,df_laptop_vector,df_laptop_comment,df_laptop_max])
     df_laptop_speed_up = pd.concat([df_laptop_newline,df_laptop_fmt,df_laptop_cc,df_laptop_vector,df_laptop_comment,df_laptop_max])
-
+    df_laptop_table = df_laptop_original
+    df_laptop_table['newline_speedup'] = df_laptop_newline['speed_up']
+    df_laptop_table['fmt_speedup'] = df_laptop_fmt['speed_up']
+    df_laptop_table['cc_speedup'] = df_laptop_cc['speed_up']
+    df_laptop_table['vector_speedup'] = df_laptop_vector['speed_up']
+    df_laptop_table['comment_speedup'] = df_laptop_comment['speed_up']
+    df_laptop_table['max_speedup'] = df_laptop_max['speed_up']
+    df_laptop_table = df_laptop_table[['file','avg_runtime','newline_speedup','fmt_speedup','cc_speedup','vector_speedup','comment_speedup','max_speedup']].copy()
+    
     df_laptop_runs = pd.melt(df_laptop,
                             id_vars=["file","code_type"],
                             value_vars=["runtime","runtime1","runtime2","runtime3","runtime4"],
@@ -152,23 +237,68 @@ def main():
                             var_name = "speed_up",
                             value_name="speed_ups")
     
-    print(df_laptop_speed_ups.head())
+    df_cluster = pd.concat([df_cluster_original,df_cluster_newline,df_cluster_fmt,df_cluster_cc,df_cluster_vector,df_cluster_comment,df_cluster_max])
+    df_cluster_speed_up = pd.concat([df_cluster_newline,df_cluster_fmt,df_cluster_cc,df_cluster_vector,df_cluster_comment,df_cluster_max])
+    df_cluster_table = df_cluster_original
+    df_cluster_table['newline_speedup'] = df_cluster_newline['speed_up']
+    df_cluster_table['fmt_speedup'] = df_cluster_fmt['speed_up']
+    df_cluster_table['cc_speedup'] = df_cluster_cc['speed_up']
+    df_cluster_table['vector_speedup'] = df_cluster_vector['speed_up']
+    df_cluster_table['comment_speedup'] = df_cluster_comment['speed_up']
+    df_cluster_table['max_speedup'] = df_cluster_max['speed_up']
+    df_cluster_table = df_cluster_table[['file','avg_runtime','newline_speedup','fmt_speedup','cc_speedup','vector_speedup','comment_speedup','max_speedup']].copy()
 
-    #df_cluster = pd.concat([df_cluster_original,df_cluster_newline,df_cluster_fmt,df_cluster_cc])
-    #df_cluster_runs = pd.melt(df_cluster,
-    #                        id_vars=["file","code_type"],
-    #                        value_vars=["runtime","runtime1","runtime2","runtime3","runtime4"],
-    #                        var_name = "test_run",
-    #                        value_name="runtimes")
+    df_cluster_runs = pd.melt(df_cluster,
+                            id_vars=["file","code_type"],
+                            value_vars=["runtime","runtime1","runtime2","runtime3","runtime4"],
+                            var_name = "test_run",
+                            value_name="runtimes")
+    
+    df_cluster_speed_ups = pd.melt(df_cluster_speed_up,
+                            id_vars=["file","code_type"],
+                            value_vars=["speed_up"],
+                            var_name = "speed_up",
+                            value_name="speed_ups")
+    
+    df_epyc = pd.concat([df_epyc_original,df_epyc_newline,df_epyc_fmt,df_epyc_cc,df_epyc_vector,df_epyc_comment,df_epyc_max])
+    df_epyc_speed_up = pd.concat([df_epyc_newline,df_epyc_fmt,df_epyc_cc,df_epyc_vector,df_epyc_comment,df_epyc_max])
+    df_epyc_table = df_epyc_original
+    df_epyc_table['newline_speedup'] = df_epyc_newline['speed_up']
+    df_epyc_table['fmt_speedup'] = df_epyc_fmt['speed_up']
+    df_epyc_table['cc_speedup'] = df_epyc_cc['speed_up']
+    df_epyc_table['vector_speedup'] = df_epyc_vector['speed_up']
+    df_epyc_table['comment_speedup'] = df_epyc_comment['speed_up']
+    df_epyc_table['max_speedup'] = df_epyc_max['speed_up']
+    df_epyc_table = df_epyc_table[['file','avg_runtime','newline_speedup','fmt_speedup','cc_speedup','vector_speedup','comment_speedup','max_speedup']].copy()
+
+    df_epyc_runs = pd.melt(df_epyc,
+                            id_vars=["file","code_type"],
+                            value_vars=["runtime","runtime1","runtime2","runtime3","runtime4"],
+                            var_name = "test_run",
+                            value_name="runtimes")
+    
+    df_epyc_speed_ups = pd.melt(df_epyc_speed_up,
+                            id_vars=["file","code_type"],
+                            value_vars=["speed_up"],
+                            var_name = "speed_up",
+                            value_name="speed_ups")
 
     # generate graphs for each hardware comparing the different test cases - CHANGE to all runtimes rather than average
-    create_comparison_graph(df_laptop_runs,"Laptop")
+    #create_comparison_graph(df_laptop_runs,"Laptop")
     #create_comparison_graph(df_cluster_runs,"Cluster")
     #create_comparison_graph(df_epyc_runs,"Epyc")
     
-    create_speed_up_graph(df_laptop_speed_ups,"Laptop")
-    #create_speed_up_graph(df_cluster,"Cluster")
-    #create_speed_up_graph(df_epyc,"Epyc")
+    #create_speed_up_graph(df_laptop_speed_ups,"Laptop")
+    #create_speed_up_graph(df_cluster_speed_ups,"Cluster")
+    #create_speed_up_graph(df_epyc_speed_ups,"Epyc")
+
+    #create_table_entry(df_laptop_table,"Laptop")
+    #create_table_entry(df_cluster_table,"Cluster")
+    #create_table_entry(df_epyc_table,"Epyc")
+
+    print_speed_up_stats(df_laptop_table, "laptop")
+    print_speed_up_stats(df_cluster_table, "fatanode")
+    print_speed_up_stats(df_epyc_table, "fataepyc")
     
 if __name__ == "__main__":
     main()
