@@ -21,7 +21,7 @@ laptop_tests = [
     "sanr400_0.5.clq" 
 ]
 
-cluster_tests = [
+full_tests = [
     "brock200_1.clq","brock200_2.clq","brock200_3.clq","brock200_4.clq",
     "brock400_1.clq","brock400_2.clq","brock400_3.clq","brock400_4.clq",
     "brock800_1.clq","brock800_2.clq","brock800_3.clq","brock800_4.clq",
